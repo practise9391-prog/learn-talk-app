@@ -34,6 +34,7 @@ export const Sidebar: React.FC = () => {
   ];
 
   const toolsItems = [
+    { id: '/talk/saved-phrases', label: 'My Saved Phrases', icon: BookmarkCheck },
     { id: '/talk/translate', label: 'Translate', icon: Languages },
     { id: '/talk/speaking-help', label: 'Speaking Help (Hints)', icon: HelpCircle },
     { id: '/talk/speed', label: 'Speed Practice', icon: Zap },

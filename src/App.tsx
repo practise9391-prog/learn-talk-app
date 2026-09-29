@@ -7,6 +7,9 @@ import { HomeView } from './components/home/HomeView';
 import { LearnDashboardView } from './components/learn/LearnDashboardView';
 import { InteractiveLessonEngine } from './components/learn/InteractiveLessonEngine';
 import { TalkHubView } from './components/talk/TalkHubView';
+import { TalkHomeView } from './components/talk/TalkHomeView';
+import { PhoneCallConversationView } from './components/talk/PhoneCallConversationView';
+import { MySavedPhrasesView } from './components/talk/MySavedPhrasesView';
 import { JarvisPartnerView } from './components/talk/JarvisPartnerView';
 import { ConversationSessionView } from './components/talk/ConversationSessionView';
 import { Practice247View } from './components/talk/Practice247View';
@@ -24,6 +27,7 @@ import { CurriculumFeatureView } from './components/learn/CurriculumFeatureView'
 import { OnboardingModal } from './components/onboarding/OnboardingModal';
 import { MASTER_CURRICULUM } from './data/curriculumData';
 import { ConfidenceMode } from './types';
+import { ConversationDifficulty } from './types/talk';
 
 const RouterOutlet: React.FC = () => {
   const { currentRoute, navigate } = useNavigation();
@@ -72,7 +76,20 @@ const RouterOutlet: React.FC = () => {
       return <LearnDashboardView />;
 
     case '/talk':
-      return <TalkHubView />;
+      return <TalkHomeView />;
+
+    case '/talk/call':
+      return (
+        <PhoneCallConversationView
+          topicId={params.topicId}
+          personaId={params.personaId}
+          difficulty={params.difficulty as ConversationDifficulty}
+          initialMode={params.initialMode as 'voice' | 'text'}
+        />
+      );
+
+    case '/talk/saved-phrases':
+      return <MySavedPhrasesView />;
 
     case '/talk/jarvis':
       return <JarvisPartnerView />;
