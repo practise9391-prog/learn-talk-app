@@ -74,12 +74,12 @@ export const DailyLearningCard: React.FC = () => {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2 border-t border-border">
         <div className="flex items-center gap-2 text-xs font-semibold text-text-muted">
           <BookOpen size={15} className="text-primary" />
-          <span>Unit 3: Daily Routine & Present Simple</span>
+          <span>Beginner Level 1 • Unit 2: Me and My Day</span>
         </div>
 
         <button
           type="button"
-          onClick={() => navigate('/learn/lesson/l-6')}
+          onClick={() => navigate('/learn/lesson/b1-u2-l1')}
           className="inline-flex items-center justify-center gap-2 px-6 py-3 bg-primary text-primary-foreground font-bold text-sm rounded-xl shadow-md shadow-primary/25 hover:bg-primary-hover active:scale-98 transition-all"
         >
           <Play size={16} fill="currentColor" />

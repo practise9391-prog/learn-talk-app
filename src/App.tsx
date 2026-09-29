@@ -4,8 +4,8 @@ import { UserProvider } from './context/UserContext';
 import { NavigationProvider, useNavigation } from './context/NavigationContext';
 import { AppShell } from './components/layout/AppShell';
 import { HomeView } from './components/home/HomeView';
-import { LearnHubView } from './components/learn/LearnHubView';
-import { LessonPlayerShell } from './components/learn/LessonPlayerShell';
+import { LearnDashboardView } from './components/learn/LearnDashboardView';
+import { InteractiveLessonEngine } from './components/learn/InteractiveLessonEngine';
 import { TalkHubView } from './components/talk/TalkHubView';
 import { JarvisPartnerView } from './components/talk/JarvisPartnerView';
 import { ConversationSessionView } from './components/talk/ConversationSessionView';
@@ -22,7 +22,7 @@ import { ProgressView } from './components/progress/ProgressView';
 import { SettingsView } from './components/settings/SettingsView';
 import { CurriculumFeatureView } from './components/learn/CurriculumFeatureView';
 import { OnboardingModal } from './components/onboarding/OnboardingModal';
-import { INITIAL_UNITS } from './data/levels';
+import { MASTER_CURRICULUM } from './data/curriculumData';
 import { ConfidenceMode } from './types';
 
 const RouterOutlet: React.FC = () => {
@@ -30,18 +30,24 @@ const RouterOutlet: React.FC = () => {
   const path = currentRoute.path;
   const params = currentRoute.params || {};
 
-  // Find active lesson for /learn/lesson/:id
+  // Find active lesson for /learn/lesson/:id in MASTER_CURRICULUM
   if (path.startsWith('/learn/lesson/')) {
     const lessonId = path.replace('/learn/lesson/', '');
     let matchedLesson = null;
-    for (const unit of INITIAL_UNITS) {
-      const found = unit.lessons.find((l) => l.id === lessonId);
-      if (found) {
-        matchedLesson = found;
-        break;
+
+    for (const lvl of MASTER_CURRICULUM) {
+      for (const unit of lvl.units) {
+        const found = unit.lessons.find((l) => l.id === lessonId);
+        if (found) {
+          matchedLesson = found;
+          break;
+        }
       }
+      if (matchedLesson) break;
     }
-    return <LessonPlayerShell lesson={matchedLesson || INITIAL_UNITS[2].lessons[1]} />;
+
+    const defaultLesson = MASTER_CURRICULUM[0].units[1].lessons[0];
+    return <InteractiveLessonEngine lesson={matchedLesson || defaultLesson} />;
   }
 
   // Conversation in location
@@ -63,7 +69,7 @@ const RouterOutlet: React.FC = () => {
       return <HomeView />;
 
     case '/learn':
-      return <LearnHubView />;
+      return <LearnDashboardView />;
 
     case '/talk':
       return <TalkHubView />;
