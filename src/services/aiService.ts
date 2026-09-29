@@ -152,6 +152,14 @@ class SpeechToTextService {
     }
   }
 
+  public start(handlers: SpeechRecognitionHandlers): boolean {
+    return this.startListening(handlers);
+  }
+
+  public stop(): void {
+    this.stopListening();
+  }
+
   public isAvailable(): boolean {
     return Boolean(this.recognition);
   }
