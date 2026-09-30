@@ -890,13 +890,112 @@ export const InteractiveLessonEngine: React.FC<InteractiveLessonEngineProps> = (
               </div>
             </div>
 
-            <button
-              type="button"
-              onClick={handleFinishLesson}
-              className="px-8 py-3.5 bg-primary text-primary-foreground font-black text-sm rounded-xl shadow-lg shadow-primary/25 hover:bg-primary-hover active:scale-98 transition-all"
-            >
-              Return to Curriculum
-            </button>
+            {/* Actionable Next Steps Grid (Section 9 & 10) */}
+            <div className="pt-2 max-w-xl mx-auto space-y-3">
+              <span className="text-[11px] font-bold text-text-muted uppercase tracking-wider block">
+                Where would you like to apply what you just learned?
+              </span>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-left">
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleFinishLesson();
+                    navigate('/talk/call', {
+                      lessonContext: lesson.title,
+                      initialMode: 'voice',
+                    });
+                  }}
+                  className="p-3.5 rounded-2xl bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-all flex items-center gap-3 group text-xs"
+                >
+                  <div className="p-2 rounded-xl bg-primary text-white shrink-0 group-hover:scale-105 transition-transform">
+                    <Mic size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <strong className="text-text block truncate group-hover:text-primary transition-colors">
+                      Talk About It with Jarvis
+                    </strong>
+                    <span className="text-[11px] text-text-muted block truncate">
+                      Spoken conversation using {lesson.title}
+                    </span>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleFinishLesson();
+                    navigate('/practice');
+                  }}
+                  className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 transition-all flex items-center gap-3 group text-xs"
+                >
+                  <div className="p-2 rounded-xl bg-amber-500 text-white shrink-0 group-hover:scale-105 transition-transform">
+                    <Sparkles size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <strong className="text-text block truncate group-hover:text-amber-500 transition-colors">
+                      Practice in Arena
+                    </strong>
+                    <span className="text-[11px] text-text-muted block truncate">
+                      Speed drills & language games
+                    </span>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleFinishLesson();
+                    navigate('/roleplay');
+                  }}
+                  className="p-3.5 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 hover:bg-indigo-500/20 transition-all flex items-center gap-3 group text-xs"
+                >
+                  <div className="p-2 rounded-xl bg-indigo-500 text-white shrink-0 group-hover:scale-105 transition-transform">
+                    <BookOpen size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <strong className="text-text block truncate group-hover:text-indigo-500 transition-colors">
+                      Simulate a Roleplay
+                    </strong>
+                    <span className="text-[11px] text-text-muted block truncate">
+                      Real-world workplace & café context
+                    </span>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    handleFinishLesson();
+                    navigate('/mistakes');
+                  }}
+                  className="p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 hover:bg-rose-500/20 transition-all flex items-center gap-3 group text-xs"
+                >
+                  <div className="p-2 rounded-xl bg-rose-500 text-white shrink-0 group-hover:scale-105 transition-transform">
+                    <AlertTriangle size={16} />
+                  </div>
+                  <div className="min-w-0">
+                    <strong className="text-text block truncate group-hover:text-rose-500 transition-colors">
+                      Review Mistakes
+                    </strong>
+                    <span className="text-[11px] text-text-muted block truncate">
+                      Target weakness & retry drills
+                    </span>
+                  </div>
+                </button>
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={handleFinishLesson}
+                  className="w-full sm:w-auto px-8 py-3 bg-primary text-primary-foreground font-black text-xs rounded-xl shadow-lg shadow-primary/25 hover:bg-primary-hover active:scale-98 transition-all inline-flex items-center justify-center gap-2"
+                >
+                  <span>Continue to Next Lesson</span>
+                  <ArrowRight size={14} />
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

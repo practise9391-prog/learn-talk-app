@@ -39,13 +39,15 @@ export const VisualLearningPathMap: React.FC = () => {
           </p>
         </div>
 
-        {/* Legend */}
-        <div className="flex flex-wrap items-center gap-2.5 text-[11px] font-bold text-text-muted bg-surface px-3 py-1.5 rounded-xl border border-border">
+        {/* Legend (Section 8: Locked, Available, Learning, Practicing, Completed, Mastered) */}
+        <div className="flex flex-wrap items-center gap-2 text-[10px] font-bold text-text-muted bg-surface px-3 py-1.5 rounded-xl border border-border">
           <span className="flex items-center gap-1"><Lock size={11} /> Locked</span>
           <span>•</span>
           <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full border border-text-muted" /> Available</span>
           <span>•</span>
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-primary animate-pulse" /> Learning</span>
+          <span className="flex items-center gap-1 text-primary"><span className="w-2 h-2 rounded-full bg-primary animate-pulse" /> Learning</span>
+          <span>•</span>
+          <span className="flex items-center gap-1 text-indigo-500"><Sparkles size={11} /> Practicing</span>
           <span>•</span>
           <span className="flex items-center gap-1 text-emerald-500"><Check size={12} /> Completed</span>
           <span>•</span>
@@ -60,10 +62,12 @@ export const VisualLearningPathMap: React.FC = () => {
 
         <div className="space-y-6">
           {allUnits.slice(0, 10).map((unit, idx) => {
-            const isCompleted = idx < 2;
-            const isLearning = idx === 2;
-            const isAvailable = idx === 3;
-            const isLocked = idx > 3;
+            const isMastered = idx === 0;
+            const isCompleted = idx === 1;
+            const isPracticing = idx === 2;
+            const isLearning = idx === 3;
+            const isAvailable = idx === 4;
+            const isLocked = idx > 4;
 
             return (
               <div
@@ -86,6 +90,10 @@ export const VisualLearningPathMap: React.FC = () => {
                         ? 'bg-card/50 border-border opacity-50 cursor-not-allowed'
                         : isLearning
                         ? 'bg-card border-primary ring-2 ring-primary/20 shadow-md cursor-pointer hover:border-primary'
+                        : isPracticing
+                        ? 'bg-card border-indigo-400 ring-2 ring-indigo-400/20 shadow-xs cursor-pointer'
+                        : isMastered
+                        ? 'bg-amber-50/40 dark:bg-amber-950/20 border-amber-300 dark:border-amber-800 cursor-pointer shadow-xs'
                         : isCompleted
                         ? 'bg-emerald-50/40 dark:bg-emerald-950/20 border-emerald-300 dark:border-emerald-800 cursor-pointer'
                         : 'bg-card border-border hover:border-primary/40 cursor-pointer shadow-xs'
@@ -96,13 +104,21 @@ export const VisualLearningPathMap: React.FC = () => {
                     <span className="text-[10px] font-bold uppercase tracking-wider text-primary">
                       {unit.levelLabel}
                     </span>
-                    {isCompleted ? (
+                    {isMastered ? (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center gap-0.5">
+                        <Star size={11} fill="currentColor" /> Mastered
+                      </span>
+                    ) : isCompleted ? (
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center gap-0.5">
                         <Check size={11} /> Completed
                       </span>
+                    ) : isPracticing ? (
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center gap-0.5">
+                        <Sparkles size={11} /> Practicing
+                      </span>
                     ) : isLearning ? (
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-primary/10 text-primary flex items-center gap-0.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" /> Active
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" /> Active Learning
                       </span>
                     ) : (
                       <span className="text-[10px] font-semibold text-text-muted">
@@ -124,8 +140,12 @@ export const VisualLearningPathMap: React.FC = () => {
                   className={`
                     w-12 h-12 rounded-2xl flex items-center justify-center text-xl shrink-0 z-10 transition-transform shadow-md
                     ${
-                      isCompleted
+                      isMastered
+                        ? 'bg-amber-500 text-white ring-4 ring-amber-500/20'
+                        : isCompleted
                         ? 'bg-emerald-500 text-white ring-4 ring-emerald-500/20'
+                        : isPracticing
+                        ? 'bg-indigo-500 text-white ring-4 ring-indigo-500/20'
                         : isLearning
                         ? 'bg-primary text-white ring-4 ring-primary/30 animate-bounce-subtle'
                         : isAvailable
@@ -134,7 +154,9 @@ export const VisualLearningPathMap: React.FC = () => {
                     }
                   `}
                 >
-                  {isCompleted ? (
+                  {isMastered ? (
+                    <Star size={20} fill="currentColor" />
+                  ) : isCompleted ? (
                     <Check size={20} strokeWidth={3} />
                   ) : isLocked ? (
                     <Lock size={16} />

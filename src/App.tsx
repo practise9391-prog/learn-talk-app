@@ -18,12 +18,26 @@ import { TranslationView } from './components/talk/TranslationView';
 import { SpeakingHelpModal } from './components/talk/SpeakingHelpModal';
 import { RoleplayDirectoryView } from './components/roleplay/RoleplayDirectoryView';
 import { TestHubView } from './components/test/TestHubView';
+import { TestProvider } from './context/TestContext';
 import { RecordingsView } from './components/recordings/RecordingsView';
 import { HistoryView } from './components/history/HistoryView';
 import { MistakesView } from './components/mistakes/MistakesView';
 import { ProgressView } from './components/progress/ProgressView';
 import { SettingsView } from './components/settings/SettingsView';
 import { CurriculumFeatureView } from './components/learn/CurriculumFeatureView';
+import { GrammarHubView } from './components/grammar/GrammarHubView';
+import { VocabularyHubView } from './components/vocabulary/VocabularyHubView';
+import { IdiomsHubView } from './components/idioms/IdiomsHubView';
+import { PhrasalVerbsHubView } from './components/phrasal/PhrasalVerbsHubView';
+import { CurriculumModuleProvider } from './context/CurriculumModuleContext';
+import { HistoryProvider } from './context/HistoryContext';
+import { PracticeProvider } from './context/PracticeContext';
+import { PracticeHubView } from './components/practice/PracticeHubView';
+import { NotificationProvider } from './context/NotificationContext';
+import { AdminProvider } from './context/AdminContext';
+import { UserProfileView } from './components/profile/UserProfileView';
+import { AdminDashboardView } from './components/admin/AdminDashboardView';
+import { AdaptiveLearningProvider } from './context/AdaptiveLearningContext';
 import { OnboardingModal } from './components/onboarding/OnboardingModal';
 import { MASTER_CURRICULUM } from './data/curriculumData';
 import { ConfidenceMode } from './types';
@@ -85,6 +99,10 @@ const RouterOutlet: React.FC = () => {
           personaId={params.personaId}
           difficulty={params.difficulty as ConversationDifficulty}
           initialMode={params.initialMode as 'voice' | 'text'}
+          lessonContext={params.lessonContext}
+          customStarter={params.customStarter}
+          grammarContext={params.grammarContext}
+          vocabContext={params.vocabContext}
         />
       );
 
@@ -136,18 +154,33 @@ const RouterOutlet: React.FC = () => {
       return <SettingsView />;
 
     case '/grammar':
-      return <CurriculumFeatureView type="grammar" />;
+      return <GrammarHubView />;
 
     case '/vocabulary':
-      return <CurriculumFeatureView type="vocabulary" />;
+      return <VocabularyHubView />;
+
+    case '/idioms':
+      return <IdiomsHubView />;
+
+    case '/phrasal-verbs':
+      return <PhrasalVerbsHubView />;
 
     case '/pronunciation':
       return <CurriculumFeatureView type="pronunciation" />;
 
-    case '/idioms':
-      return <CurriculumFeatureView type="idioms" />;
+    case '/practice':
+      return <PracticeHubView />;
+
+    case '/profile':
+      return <UserProfileView />;
+
+    case '/admin':
+      return <AdminDashboardView />;
 
     default:
+      if (path.startsWith('/test')) {
+        return <TestHubView />;
+      }
       return <HomeView />;
   }
 };
@@ -156,12 +189,26 @@ export const App: React.FC = () => {
   return (
     <ThemeProvider>
       <UserProvider>
-        <NavigationProvider>
-          <AppShell>
-            <RouterOutlet />
-            <OnboardingModal />
-          </AppShell>
-        </NavigationProvider>
+        <TestProvider>
+          <CurriculumModuleProvider>
+            <HistoryProvider>
+              <PracticeProvider>
+                <AdaptiveLearningProvider>
+                  <NotificationProvider>
+                    <AdminProvider>
+                      <NavigationProvider>
+                        <AppShell>
+                          <RouterOutlet />
+                          <OnboardingModal />
+                        </AppShell>
+                      </NavigationProvider>
+                    </AdminProvider>
+                  </NotificationProvider>
+                </AdaptiveLearningProvider>
+              </PracticeProvider>
+            </HistoryProvider>
+          </CurriculumModuleProvider>
+        </TestProvider>
       </UserProvider>
     </ThemeProvider>
   );

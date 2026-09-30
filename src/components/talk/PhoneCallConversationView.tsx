@@ -35,6 +35,10 @@ interface PhoneCallConversationViewProps {
   personaId?: string;
   difficulty?: ConversationDifficulty;
   initialMode?: 'voice' | 'text';
+  lessonContext?: string;
+  customStarter?: string;
+  grammarContext?: string;
+  vocabContext?: string;
 }
 
 export const PhoneCallConversationView: React.FC<PhoneCallConversationViewProps> = ({
@@ -42,6 +46,10 @@ export const PhoneCallConversationView: React.FC<PhoneCallConversationViewProps>
   personaId = 'jarvis',
   difficulty = 'normal',
   initialMode = 'voice',
+  lessonContext,
+  customStarter,
+  grammarContext,
+  vocabContext,
 }) => {
   const { user, addSpokenMinutes, saveNewRecording } = useUser();
   const { navigate } = useNavigation();
@@ -80,12 +88,22 @@ export const PhoneCallConversationView: React.FC<PhoneCallConversationViewProps>
   const [summaryAnalytics, setSummaryAnalytics] = useState<SessionAnalytics | null>(null);
   const [isSummaryOpen, setIsSummaryOpen] = useState<boolean>(false);
 
+  const initialGreeting = customStarter
+    ? customStarter
+    : lessonContext
+    ? `Hey ${user.name}! Great job finishing the "${lessonContext}" lesson! Want to practice speaking with what you just learned? How was your experience?`
+    : grammarContext
+    ? `Hey ${user.name}! Let's practice using ${grammarContext} in a natural conversation. Try sharing a real example or asking me a question!`
+    : vocabContext
+    ? `Hey ${user.name}! Ready to use the vocabulary "${vocabContext}" in conversation? Tell me something about your day using it!`
+    : topic.initialPrompt;
+
   // Conversation turns stream
   const [turns, setTurns] = useState<ConversationTurn[]>([
     {
       id: 'turn-0',
       sender: 'jarvis',
-      text: topic.initialPrompt,
+      text: initialGreeting,
       timestamp: 'Just now',
     }
   ]);
@@ -107,7 +125,7 @@ export const PhoneCallConversationView: React.FC<PhoneCallConversationViewProps>
 
     // Speak initial greeting if in voice mode
     if (mode === 'voice') {
-      speakJarvisResponse(topic.initialPrompt);
+      speakJarvisResponse(initialGreeting);
     }
 
     return () => {

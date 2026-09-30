@@ -7,6 +7,7 @@ interface PageHeaderProps {
   subtitle?: string;
   badge?: string;
   showBack?: boolean;
+  onBack?: () => void;
   actions?: React.ReactNode;
   className?: string;
 }
@@ -16,6 +17,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   subtitle,
   badge,
   showBack = false,
+  onBack,
   actions,
   className = '',
 }) => {
@@ -27,7 +29,7 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
         {(showBack || canGoBack) && (
           <button
             type="button"
-            onClick={goBack}
+            onClick={onBack || goBack}
             className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-card border border-border mt-0.5 transition-colors shrink-0"
             aria-label="Go back to previous page"
             title="Go back"

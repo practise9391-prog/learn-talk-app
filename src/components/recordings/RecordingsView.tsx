@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { PageHeader } from '../layout/PageHeader';
 import { useUser } from '../../context/UserContext';
+import { useNavigation } from '../../context/NavigationContext';
 import { AudioPlayer } from '../common/AudioPlayer';
+import { EmptyState } from '../common/EmptyState';
 import { Recording } from '../../types';
 import {
   Mic,
@@ -17,6 +19,7 @@ import {
 
 export const RecordingsView: React.FC = () => {
   const { recordings, deleteRecording, user } = useUser();
+  const { navigate } = useNavigation();
   const [selectedRec, setSelectedRec] = useState<Recording | null>(recordings[0] || null);
 
   return (
@@ -40,21 +43,25 @@ export const RecordingsView: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recordings List */}
-        <div className="lg:col-span-1 space-y-3">
-          <div className="flex items-center justify-between px-1">
-            <span className="text-xs font-bold text-text-muted uppercase tracking-wider">
-              Saved Sessions ({recordings.length})
-            </span>
-          </div>
-
-          {recordings.length === 0 ? (
-            <div className="p-6 rounded-2xl bg-card border border-border text-center text-xs text-text-muted">
-              No recordings saved yet. Start a speaking session in Talk or Speaking World!
+      {recordings.length === 0 ? (
+        <EmptyState
+          icon={Mic}
+          title="No Voice Recordings Yet"
+          description="Your live voice sessions with Jarvis and speaking roleplays will appear here with full waveform audio playback, transcripts, and natural phrasing feedback."
+          actionLabel="Start Speaking with Jarvis"
+          onAction={() => navigate('/talk')}
+          className="my-4"
+        />
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Recordings List */}
+          <div className="lg:col-span-1 space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <span className="text-xs font-bold text-text-muted uppercase tracking-wider">
+                Saved Sessions ({recordings.length})
+              </span>
             </div>
-          ) : (
-            recordings.map((rec) => {
+            {recordings.map((rec) => {
               const isSelected = selectedRec?.id === rec.id;
               return (
                 <div
@@ -100,9 +107,8 @@ export const RecordingsView: React.FC = () => {
                   </div>
                 </div>
               );
-            })
-          )}
-        </div>
+            })}
+          </div>
 
         {/* Selected Recording Detail */}
         <div className="lg:col-span-2">
@@ -178,6 +184,7 @@ export const RecordingsView: React.FC = () => {
           )}
         </div>
       </div>
+      )}
     </div>
   );
 };
