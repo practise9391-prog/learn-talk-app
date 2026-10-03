@@ -27,7 +27,24 @@ import {
   Cloud,
   Mic,
   Volume2,
+  Copy,
+  Edit3,
+  Download,
+  Upload,
+  Flag,
+  RotateCw,
+  GitBranch,
+  BookOpen,
+  Filter,
+  HeartHandshake,
+  Trophy,
 } from 'lucide-react';
+import { useCommunity } from '../../context/CommunityContext';
+import { useGamification } from '../../context/GamificationContext';
+import { ContentAuthoringModal } from './ContentAuthoringModal';
+import { ContentPreviewModal } from './ContentPreviewModal';
+import { ContentImportExportModal } from './ContentImportExportModal';
+import { ContentIssueTrackerModal } from './ContentIssueTrackerModal';
 
 export const AdminDashboardView: React.FC = () => {
   const {
@@ -42,7 +59,15 @@ export const AdminDashboardView: React.FC = () => {
     submitForReview,
     approveContent,
     publishContent,
+    unpublishContent,
     archiveContent,
+    restoreContent,
+    duplicateContentItem,
+    bulkPublish,
+    bulkArchive,
+    contentIssues,
+    contentVersions,
+    rollbackToVersion,
     updateUserStatus,
     updateUserRole,
     generateAiContentDraft,
@@ -50,11 +75,24 @@ export const AdminDashboardView: React.FC = () => {
 
   const { navigate } = useNavigation();
   const { errorClusters, skillGraph } = useAdaptiveLearning();
+  const { peers, blockedUsers, userReports, events } = useCommunity();
+  const { antiGamingRules, updateAntiGamingRule, xpTransactions } = useGamification();
 
-  const [activeTab, setActiveTab] = useState<'overview' | 'content' | 'adaptive' | 'users' | 'health' | 'audit'>('overview');
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'content' | 'adaptive' | 'community' | 'gamification' | 'users' | 'health' | 'audit'
+  >('overview');
   const [contentStatusFilter, setContentStatusFilter] = useState<string>('all');
+  const [contentSearchQuery, setContentSearchQuery] = useState<string>('');
   const [userSearchQuery, setUserSearchQuery] = useState<string>('');
-  const [selectedPreviewContent, setSelectedPreviewContent] = useState<ManagedContentItem | null>(null);
+  const [selectedContentIds, setSelectedContentIds] = useState<string[]>([]);
+
+  // Modal States
+  const [isAuthoringOpen, setIsAuthoringOpen] = useState<boolean>(false);
+  const [editingContentItem, setEditingContentItem] = useState<ManagedContentItem | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState<boolean>(false);
+  const [previewContentItem, setPreviewContentItem] = useState<ManagedContentItem | null>(null);
+  const [isImportExportOpen, setIsImportExportOpen] = useState<boolean>(false);
+  const [isIssueTrackerOpen, setIsIssueTrackerOpen] = useState<boolean>(false);
 
   // AI Content Generator state
   const [aiGenType, setAiGenType] = useState<ContentType>('grammar_topic');
@@ -71,9 +109,54 @@ export const AdminDashboardView: React.FC = () => {
     setTimeout(() => setAiGenSuccessMessage(null), 4000);
   };
 
-  const filteredContent = managedContent.filter((c) =>
-    contentStatusFilter === 'all' ? true : c.status === contentStatusFilter
-  );
+  const filteredContent = managedContent.filter((c) => {
+    if (contentStatusFilter !== 'all' && c.status !== contentStatusFilter) return false;
+    if (contentSearchQuery.trim()) {
+      const q = contentSearchQuery.toLowerCase();
+      const matchTitle = c.title.toLowerCase().includes(q);
+      const matchType = c.type.toLowerCase().includes(q);
+      const matchAuthor = (c.author || '').toLowerCase().includes(q);
+      const matchSlug = (c.contentData?.slug || '').toLowerCase().includes(q);
+      if (!matchTitle && !matchType && !matchAuthor && !matchSlug) return false;
+    }
+    return true;
+  });
+
+  const handleToggleSelect = (id: string) => {
+    setSelectedContentIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedContentIds.length === filteredContent.length) {
+      setSelectedContentIds([]);
+    } else {
+      setSelectedContentIds(filteredContent.map((c) => c.id));
+    }
+  };
+
+  const handleBulkPublish = () => {
+    if (selectedContentIds.length === 0) return;
+    bulkPublish(selectedContentIds);
+    setSelectedContentIds([]);
+  };
+
+  const handleBulkArchive = () => {
+    if (selectedContentIds.length === 0) return;
+    bulkArchive(selectedContentIds);
+    setSelectedContentIds([]);
+  };
+
+  const handleOpenAuthoring = (item?: ManagedContentItem | null) => {
+    setEditingContentItem(item || null);
+    setIsAuthoringOpen(true);
+  };
+
+  const handleOpenPreview = (item: ManagedContentItem) => {
+    setPreviewContentItem(item);
+    setIsPreviewOpen(true);
+  };
 
   const filteredUsers = managedUsers.filter((u) => {
     if (!userSearchQuery.trim()) return true;
@@ -133,6 +216,8 @@ export const AdminDashboardView: React.FC = () => {
           { id: 'overview', label: 'Admin Dashboard', icon: Activity },
           { id: 'content', label: 'Curriculum & CMS', icon: Layers },
           { id: 'adaptive', label: 'Adaptive Intelligence & Quality', icon: Sparkles },
+          { id: 'community', label: 'Community & Safety', icon: HeartHandshake },
+          { id: 'gamification', label: 'Rewards & Anti-Gaming', icon: Trophy },
           { id: 'users', label: 'User Management', icon: Users },
           { id: 'health', label: 'System Health & Flags', icon: Cpu },
           { id: 'audit', label: 'Audit Logs', icon: FileText },
@@ -219,15 +304,109 @@ export const AdminDashboardView: React.FC = () => {
       {/* 2. CONTENT CMS & WORKFLOW */}
       {activeTab === 'content' && (
         <div className="space-y-6">
-          {/* AI Content Assistant Generator Box (Requirements 22 & 23) */}
-          <div className="p-5 sm:p-6 rounded-3xl bg-card border border-border shadow-xs space-y-4">
-            <div className="flex items-center gap-2">
-              <Sparkles size={16} className="text-primary" />
-              <h3 className="text-sm font-black text-text">AI Pedagogical Content Assistant</h3>
+          {/* Production Content Suite Header Actions */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-5 rounded-3xl bg-card border border-border shadow-xs">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-[10px] font-black uppercase tracking-wider text-primary">
+                  Learning Content Platform
+                </span>
+                <span className="text-xs text-text-muted">•</span>
+                <span className="text-xs font-semibold text-text-muted">
+                  Block Authoring, Quality Validation & Publishing
+                </span>
+              </div>
+              <h3 className="text-base sm:text-lg font-black text-text mt-0.5">
+                Curriculum & Pedagogical Asset Engine
+              </h3>
             </div>
-            <p className="text-xs text-text-muted">
-              Generate structured educational drafts (Grammar, Vocabulary, Roleplay) into the <strong>Draft</strong> queue for editorial review.
-            </p>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => handleOpenAuthoring(null)}
+                className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold flex items-center gap-1.5 shadow-xs hover:bg-primary-hover transition-all"
+              >
+                <Plus size={14} />
+                <span>New Content</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsImportExportOpen(true)}
+                className="px-3.5 py-2 rounded-xl bg-surface border border-border text-text hover:border-primary text-xs font-bold flex items-center gap-1.5 transition-all"
+              >
+                <Download size={13} />
+                <span>Import / Export</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsIssueTrackerOpen(true)}
+                className="relative px-3.5 py-2 rounded-xl bg-surface border border-border text-text hover:border-rose-500 text-xs font-bold flex items-center gap-1.5 transition-all"
+              >
+                <Flag size={13} className="text-rose-500" />
+                <span>Learner Issues</span>
+                {contentIssues.filter((i) => i.status === 'reported' || i.status === 'under_review').length > 0 && (
+                  <span className="ml-1 px-1.5 py-0.2 rounded-full bg-rose-500 text-white text-[10px] font-black">
+                    {contentIssues.filter((i) => i.status === 'reported' || i.status === 'under_review').length}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Curriculum Health & Graph Validation Metrics */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+            <div className="p-3.5 rounded-2xl bg-card border border-border text-center shadow-xs">
+              <span className="text-[10px] font-bold text-text-muted uppercase block">Total Items</span>
+              <span className="text-xl font-black text-text mt-0.5 block">{managedContent.length}</span>
+              <span className="text-[10px] text-text-muted">Master assets</span>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-card border border-border text-center shadow-xs">
+              <span className="text-[10px] font-bold text-text-muted uppercase block">Published Live</span>
+              <span className="text-xl font-black text-emerald-500 mt-0.5 block">
+                {managedContent.filter((c) => c.status === 'published').length}
+              </span>
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Active in app</span>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-card border border-border text-center shadow-xs">
+              <span className="text-[10px] font-bold text-text-muted uppercase block">Awaiting Review</span>
+              <span className="text-xl font-black text-blue-500 mt-0.5 block">
+                {managedContent.filter((c) => c.status === 'review').length}
+              </span>
+              <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold">Editorial queue</span>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-card border border-border text-center shadow-xs">
+              <span className="text-[10px] font-bold text-text-muted uppercase block">Drafts</span>
+              <span className="text-xl font-black text-amber-500 mt-0.5 block">
+                {managedContent.filter((c) => c.status === 'draft').length}
+              </span>
+              <span className="text-[10px] text-text-muted font-semibold">Work in progress</span>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-card border border-border text-center shadow-xs col-span-2 sm:col-span-1">
+              <span className="text-[10px] font-bold text-text-muted uppercase block">Prerequisite Graph</span>
+              <span className="text-xl font-black text-emerald-500 mt-0.5 block flex items-center justify-center gap-1">
+                <CheckCircle2 size={16} />
+                <span>Acyclic</span>
+              </span>
+              <span className="text-[10px] text-text-muted font-semibold">0 circular cycles</span>
+            </div>
+          </div>
+
+          {/* AI Content Assistant Generator Box */}
+          <div className="p-5 rounded-3xl bg-card border border-border shadow-xs space-y-3.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles size={16} className="text-primary" />
+                <h3 className="text-sm font-black text-text">AI Pedagogical Content Assistant</h3>
+              </div>
+              <span className="text-[11px] text-text-muted">Direct output into Drafts queue for human review</span>
+            </div>
 
             <form onSubmit={handleGenerateAiDraft} className="grid grid-cols-1 sm:grid-cols-4 gap-3">
               <select
@@ -266,113 +445,275 @@ export const AdminDashboardView: React.FC = () => {
             )}
           </div>
 
-          {/* Workflow Status Filter Bar */}
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-1.5 overflow-x-auto text-xs">
-              {(['all', 'draft', 'review', 'approved', 'published', 'archived'] as const).map((st) => (
-                <button
-                  key={st}
-                  type="button"
-                  onClick={() => setContentStatusFilter(st)}
-                  className={`px-3 py-1.5 rounded-xl capitalize font-bold transition-all border ${
-                    contentStatusFilter === st
-                      ? 'bg-primary text-white border-primary shadow-2xs'
-                      : 'bg-card text-text-muted hover:text-text border-border'
-                  }`}
-                >
-                  {st}
-                </button>
-              ))}
+          {/* Workflow Status & Search Filter Bar */}
+          <div className="space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              {/* Search Box */}
+              <div className="relative flex-1 max-w-sm">
+                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-muted" />
+                <input
+                  type="text"
+                  value={contentSearchQuery}
+                  onChange={(e) => setContentSearchQuery(e.target.value)}
+                  placeholder="Search by title, slug, type, or author..."
+                  className="w-full pl-8 pr-3 py-2 rounded-xl bg-surface border border-border text-xs text-text placeholder:text-text-muted focus:outline-none focus:border-primary"
+                />
+              </div>
+
+              {/* Status Chips */}
+              <div className="flex items-center gap-1 overflow-x-auto text-xs">
+                {(['all', 'draft', 'review', 'approved', 'published', 'archived'] as const).map((st) => (
+                  <button
+                    key={st}
+                    type="button"
+                    onClick={() => setContentStatusFilter(st)}
+                    className={`px-3 py-1.5 rounded-xl capitalize font-bold transition-all border ${
+                      contentStatusFilter === st
+                        ? 'bg-primary text-white border-primary shadow-2xs'
+                        : 'bg-card text-text-muted hover:text-text border-border'
+                    }`}
+                  >
+                    {st}
+                  </button>
+                ))}
+              </div>
             </div>
 
-            <span className="text-xs text-text-muted font-semibold">
-              Showing <strong>{filteredContent.length}</strong> items
-            </span>
-          </div>
+            {/* Bulk Selection Bar */}
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-surface border border-border text-xs">
+              <div className="flex items-center gap-3">
+                <label className="flex items-center gap-2 cursor-pointer font-semibold text-text">
+                  <input
+                    type="checkbox"
+                    checked={filteredContent.length > 0 && selectedContentIds.length === filteredContent.length}
+                    onChange={handleSelectAll}
+                    className="w-4 h-4 rounded text-primary border-border focus:ring-primary/20"
+                  />
+                  <span>Select All ({filteredContent.length})</span>
+                </label>
 
-          {/* Managed Content List */}
-          <div className="space-y-3">
-            {filteredContent.map((item) => (
-              <div
-                key={item.id}
-                className="p-5 rounded-3xl bg-card border border-border shadow-xs hover:border-primary/40 transition-all space-y-3"
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-xs font-bold text-text uppercase tracking-wider">
-                      {item.type.replace('_', ' ')}
-                    </span>
-                    <span className="text-[10px] font-black px-1.5 py-0.2 rounded-md bg-surface text-text-muted border border-border">
-                      {item.level}
-                    </span>
-                    <span className="text-[10px] font-mono font-bold text-text-muted">
-                      v{item.version}
-                    </span>
-                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize border ${getStatusBadge(item.status)}`}>
-                      {item.status}
-                    </span>
-                  </div>
-
-                  <span className="text-xs text-text-muted">
-                    Updated {item.updatedAt} by <strong>{item.author}</strong>
+                {selectedContentIds.length > 0 && (
+                  <span className="font-bold text-primary">
+                    {selectedContentIds.length} item{selectedContentIds.length > 1 ? 's' : ''} selected
                   </span>
-                </div>
+                )}
+              </div>
 
-                <h4 className="text-sm font-black text-text">{item.title}</h4>
-                <p className="text-xs text-text-muted leading-relaxed">{item.summary}</p>
-
-                {/* Workflow Actions */}
-                <div className="flex items-center justify-between pt-2 border-t border-border flex-wrap gap-2">
+              {selectedContentIds.length > 0 ? (
+                <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => setSelectedPreviewContent(item)}
-                    className="text-xs font-bold text-primary hover:underline flex items-center gap-1"
+                    onClick={handleBulkPublish}
+                    className="px-3 py-1.5 rounded-xl bg-emerald-500 text-white font-bold hover:bg-emerald-600 transition-all shadow-2xs"
                   >
-                    <Eye size={13} />
-                    <span>Preview as Learner</span>
+                    Bulk Publish
                   </button>
-
-                  <div className="flex items-center gap-2">
-                    {item.status === 'draft' && (
-                      <button
-                        type="button"
-                        onClick={() => submitForReview(item.id)}
-                        className="px-3 py-1 rounded-xl bg-surface border border-border hover:border-primary text-xs font-bold text-text transition-all"
-                      >
-                        Submit for Review
-                      </button>
-                    )}
-                    {item.status === 'review' && (
-                      <button
-                        type="button"
-                        onClick={() => approveContent(item.id)}
-                        className="px-3 py-1 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 text-xs font-bold transition-all"
-                      >
-                        Approve Content
-                      </button>
-                    )}
-                    {item.status === 'approved' && (
-                      <button
-                        type="button"
-                        onClick={() => publishContent(item.id)}
-                        className="px-3 py-1 rounded-xl bg-emerald-500 text-white text-xs font-bold shadow-2xs hover:bg-emerald-600 transition-all"
-                      >
-                        Publish to Live App
-                      </button>
-                    )}
-                    {item.status !== 'archived' && (
-                      <button
-                        type="button"
-                        onClick={() => archiveContent(item.id)}
-                        className="px-3 py-1 rounded-xl bg-surface border border-border text-xs text-text-muted hover:text-rose-500 transition-all"
-                      >
-                        Archive
-                      </button>
-                    )}
-                  </div>
+                  <button
+                    type="button"
+                    onClick={handleBulkArchive}
+                    className="px-3 py-1.5 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20 font-bold hover:bg-rose-500/20 transition-all"
+                  >
+                    Bulk Archive
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedContentIds([])}
+                    className="px-2.5 py-1.5 text-text-muted hover:text-text font-semibold"
+                  >
+                    Deselect
+                  </button>
                 </div>
+              ) : (
+                <span className="text-text-muted font-medium">
+                  Showing <strong>{filteredContent.length}</strong> items
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Managed Content Cards */}
+          <div className="space-y-3">
+            {filteredContent.length === 0 ? (
+              <div className="p-12 text-center text-text-muted text-xs bg-card border border-border rounded-3xl space-y-2">
+                <BookOpen size={32} className="mx-auto opacity-50" />
+                <p className="font-bold text-text">No content matches the selected filter</p>
+                <p>Try modifying your search query or selecting a different status filter.</p>
               </div>
-            ))}
+            ) : (
+              filteredContent.map((item) => {
+                const isSelected = selectedContentIds.includes(item.id);
+                const hasVersions = contentVersions[item.id] && contentVersions[item.id].length > 1;
+
+                return (
+                  <div
+                    key={item.id}
+                    className={`p-5 rounded-3xl bg-card border transition-all space-y-3 ${
+                      isSelected
+                        ? 'border-primary ring-2 ring-primary/20 shadow-xs'
+                        : 'border-border hover:border-primary/40 shadow-xs'
+                    }`}
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                      <div className="flex items-center gap-2.5 flex-wrap">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => handleToggleSelect(item.id)}
+                          className="w-4 h-4 rounded text-primary border-border focus:ring-primary/20"
+                        />
+                        <span className="text-xs font-bold text-text uppercase tracking-wider">
+                          {item.type.replace('_', ' ')}
+                        </span>
+                        <span className="text-[10px] font-black px-1.5 py-0.2 rounded-md bg-surface text-text-muted border border-border">
+                          {item.level}
+                        </span>
+                        <span className="text-[10px] font-mono font-bold text-text-muted">
+                          v{item.version}
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold capitalize border ${getStatusBadge(item.status)}`}>
+                          {item.status}
+                        </span>
+                        {item.contentData?.slug && (
+                          <span className="text-[10px] font-mono text-text-muted hidden md:inline">
+                            /{item.contentData.slug}
+                          </span>
+                        )}
+                      </div>
+
+                      <span className="text-xs text-text-muted">
+                        Updated {item.updatedAt} by <strong>{item.author}</strong>
+                      </span>
+                    </div>
+
+                    <div>
+                      <h4 className="text-sm font-black text-text">{item.title}</h4>
+                      <p className="text-xs text-text-muted leading-relaxed mt-0.5">{item.summary}</p>
+                    </div>
+
+                    {/* Prerequisites & Objectives tags */}
+                    {item.contentData?.prerequisites && item.contentData.prerequisites.length > 0 && (
+                      <div className="flex items-center gap-1.5 text-[10px] text-text-muted flex-wrap">
+                        <span className="font-bold text-text">Prerequisites:</span>
+                        {item.contentData.prerequisites.map((prereq: string) => (
+                          <span key={prereq} className="px-2 py-0.5 rounded bg-surface border border-border font-mono">
+                            {prereq}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Workflow Actions */}
+                    <div className="flex items-center justify-between pt-3 border-t border-border flex-wrap gap-2 text-xs">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenPreview(item)}
+                          className="font-bold text-primary hover:underline flex items-center gap-1 px-2.5 py-1 rounded-lg hover:bg-primary/5"
+                        >
+                          <Eye size={13} />
+                          <span>Preview as Learner</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => handleOpenAuthoring(item)}
+                          className="font-bold text-text hover:text-primary flex items-center gap-1 px-2.5 py-1 rounded-lg bg-surface border border-border hover:border-primary transition-all"
+                        >
+                          <Edit3 size={13} />
+                          <span>Edit in Studio</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => duplicateContentItem(item.id)}
+                          className="font-bold text-text-muted hover:text-text flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-surface transition-all"
+                          title="Duplicate this item into Draft"
+                        >
+                          <Copy size={12} />
+                          <span>Duplicate</span>
+                        </button>
+
+                        {/* Version rollback button if versions exist */}
+                        {hasVersions && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const v = item.version > 1 ? item.version - 1 : 1;
+                              rollbackToVersion(item.id, v);
+                            }}
+                            className="font-bold text-purple-600 dark:text-purple-400 hover:underline flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-purple-500/10 transition-all text-[11px]"
+                            title="Roll back to previous version"
+                          >
+                            <RotateCw size={11} />
+                            <span>Rollback (v{item.version - 1})</span>
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {item.status === 'draft' && (
+                          <button
+                            type="button"
+                            onClick={() => submitForReview(item.id)}
+                            className="px-3 py-1 rounded-xl bg-surface border border-border hover:border-primary text-xs font-bold text-text transition-all"
+                          >
+                            Submit for Review
+                          </button>
+                        )}
+
+                        {item.status === 'review' && (
+                          <button
+                            type="button"
+                            onClick={() => approveContent(item.id)}
+                            className="px-3 py-1 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 text-xs font-bold transition-all"
+                          >
+                            Approve Content
+                          </button>
+                        )}
+
+                        {item.status === 'approved' && (
+                          <button
+                            type="button"
+                            onClick={() => publishContent(item.id)}
+                            className="px-3 py-1 rounded-xl bg-emerald-500 text-white text-xs font-bold shadow-2xs hover:bg-emerald-600 transition-all"
+                          >
+                            Publish to Live App
+                          </button>
+                        )}
+
+                        {item.status === 'published' && (
+                          <button
+                            type="button"
+                            onClick={() => unpublishContent(item.id)}
+                            className="px-3 py-1 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-xs font-bold transition-all"
+                          >
+                            Unpublish
+                          </button>
+                        )}
+
+                        {item.status === 'archived' ? (
+                          <button
+                            type="button"
+                            onClick={() => restoreContent(item.id)}
+                            className="px-3 py-1 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-xs font-bold transition-all"
+                          >
+                            Restore
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => archiveContent(item.id)}
+                            className="px-3 py-1 rounded-xl bg-surface border border-border text-xs text-text-muted hover:text-rose-500 transition-all"
+                          >
+                            Archive
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       )}
@@ -549,6 +890,146 @@ export const AdminDashboardView: React.FC = () => {
         </div>
       )}
 
+      {/* 2.8 COMMUNITY PRACTICE & SAFETY GOVERNANCE (Part 14) */}
+      {activeTab === 'community' && (
+        <div className="space-y-6">
+          {/* Key Community Observability Metrics */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+            <div className="p-4 rounded-2xl bg-card border border-border text-center space-y-1 shadow-xs">
+              <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block">
+                Community Peers
+              </span>
+              <span className="text-2xl font-black text-primary">{peers.length}</span>
+              <span className="text-[11px] text-emerald-500 font-semibold block">Discovery Enabled</span>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-card border border-border text-center space-y-1 shadow-xs">
+              <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block">
+                Active Speaking Rooms
+              </span>
+              <span className="text-2xl font-black text-indigo-500">3</span>
+              <span className="text-[11px] text-text-muted font-semibold block">1-on-1 & Round Tables</span>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-card border border-border text-center space-y-1 shadow-xs">
+              <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block">
+                Safety Reports
+              </span>
+              <span className="text-2xl font-black text-rose-500">{userReports.length}</span>
+              <span className="text-[11px] text-rose-600 dark:text-rose-400 font-semibold block">Moderation Queue</span>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-card border border-border text-center space-y-1 shadow-xs">
+              <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider block">
+                Scheduled Events
+              </span>
+              <span className="text-2xl font-black text-emerald-500">{events.length}</span>
+              <span className="text-[11px] text-text-muted font-semibold block">Speaking Clubs</span>
+            </div>
+          </div>
+
+          {/* Moderation Queue */}
+          <div className="p-6 rounded-3xl bg-card border border-border shadow-xs space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-black text-text">Community Moderation & Safety Reports</h3>
+                <p className="text-xs text-text-muted">
+                  Confidential reports submitted by learners during peer speaking practice
+                </p>
+              </div>
+              <span className="text-xs font-bold text-rose-500 bg-rose-500/10 px-2.5 py-1 rounded-full">
+                {userReports.length} Action Items
+              </span>
+            </div>
+
+            {userReports.length === 0 ? (
+              <p className="text-xs text-text-muted italic py-3">No active safety reports. Community conversations are respectful.</p>
+            ) : (
+              <div className="space-y-3">
+                {userReports.map((rep) => (
+                  <div key={rep.id} className="p-4 rounded-2xl bg-surface border border-border space-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-text">
+                        Report against: <strong>{rep.reportedUserName}</strong>
+                      </span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 uppercase">
+                        {rep.category.replace('_', ' ')}
+                      </span>
+                    </div>
+                    <p className="text-text-muted leading-relaxed">"{rep.description}"</p>
+                    <div className="flex items-center justify-between pt-1 border-t border-border/60">
+                      <span className="text-[10px] text-text-muted">Status: {rep.status.replace('_', ' ')}</span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => alert(`Warning dispatched to ${rep.reportedUserName}`)}
+                          className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-600 font-bold hover:bg-amber-500/20 text-[11px]"
+                        >
+                          Issue Warning
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => alert(`Account restricted for ${rep.reportedUserName}`)}
+                          className="px-2.5 py-1 rounded-lg bg-rose-500 text-white font-bold hover:bg-rose-600 text-[11px]"
+                        >
+                          Restrict Account
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Safety & Moderation Rules Strip */}
+          <div className="p-6 rounded-3xl bg-card border border-border shadow-xs space-y-4">
+            <h3 className="text-base font-black text-text">Platform Community Safeguards</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="p-3.5 rounded-2xl bg-surface border border-border space-y-1">
+                <span className="font-bold text-text flex items-center gap-1.5">
+                  <CheckCircle2 size={14} className="text-emerald-500" />
+                  <span>Audio-First Policy Enforced</span>
+                </span>
+                <p className="text-[11px] text-text-muted leading-relaxed">
+                  No video broadcast required. Learners practice speaking without camera pressure or appearance anxiety.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-surface border border-border space-y-1">
+                <span className="font-bold text-text flex items-center gap-1.5">
+                  <CheckCircle2 size={14} className="text-emerald-500" />
+                  <span>Topic-Locked Context Guarantees</span>
+                </span>
+                <p className="text-[11px] text-text-muted leading-relaxed">
+                  Rooms remain locked to chosen pedagogical topics (job interviews, office standups, travel check-ins).
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-surface border border-border space-y-1">
+                <span className="font-bold text-text flex items-center gap-1.5">
+                  <CheckCircle2 size={14} className="text-emerald-500" />
+                  <span>Non-Intrusive Peer Learning</span>
+                </span>
+                <p className="text-[11px] text-text-muted leading-relaxed">
+                  Peer practice is 100% optional. Learners selecting "AI Only" never receive requests or appear in discovery.
+                </p>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-surface border border-border space-y-1">
+                <span className="font-bold text-text flex items-center gap-1.5">
+                  <CheckCircle2 size={14} className="text-emerald-500" />
+                  <span>Strict Anti-Spam & Rate Limits</span>
+                </span>
+                <p className="text-[11px] text-text-muted leading-relaxed">
+                  Rate limits of maximum 5 partner requests per hour prevent request flooding and unwanted contacts.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 3. USER MANAGEMENT */}
       {activeTab === 'users' && (
         <div className="p-6 rounded-3xl bg-card border border-border shadow-xs space-y-5">
@@ -697,6 +1178,150 @@ export const AdminDashboardView: React.FC = () => {
         </div>
       )}
 
+      {/* 4.5 REWARDS & ANTI-GAMING GOVERNANCE */}
+      {activeTab === 'gamification' && (
+        <div className="space-y-6">
+          <div className="p-6 rounded-3xl bg-card border border-border shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <Trophy size={18} className="text-amber-500" />
+                <h3 className="text-base font-black text-text">Pedagogical Reward Rules & Anti-Gaming Limits</h3>
+              </div>
+              <span className="text-xs text-text-muted font-semibold">
+                Guarantees rewards reflect real English study, not mindless clicking
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {Object.entries(antiGamingRules).map(([sourceKey, rule]) => (
+                <div
+                  key={sourceKey}
+                  className="p-4 rounded-2xl bg-surface border border-border space-y-3"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-text uppercase text-xs tracking-wider">
+                      {sourceKey.replace('_', ' ')} Practice
+                    </span>
+                    <span className="px-2 py-0.5 rounded-md bg-card border border-border text-[10px] font-mono font-bold text-text-muted">
+                      Cap: {rule.maxDailyXP} XP/day
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2.5 text-xs">
+                    <div>
+                      <label className="text-[10px] font-semibold text-text-muted block mb-1">
+                        Min Duration (sec)
+                      </label>
+                      <input
+                        type="number"
+                        value={rule.minDurationSeconds}
+                        onChange={(e) =>
+                          updateAntiGamingRule(sourceKey, {
+                            minDurationSeconds: Math.max(0, parseInt(e.target.value) || 0),
+                          })
+                        }
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-card border border-border text-text font-mono text-xs focus:outline-none focus:border-primary"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-semibold text-text-muted block mb-1">
+                        Cooldown (sec)
+                      </label>
+                      <input
+                        type="number"
+                        value={rule.cooldownSeconds}
+                        onChange={(e) =>
+                          updateAntiGamingRule(sourceKey, {
+                            cooldownSeconds: Math.max(0, parseInt(e.target.value) || 0),
+                          })
+                        }
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-card border border-border text-text font-mono text-xs focus:outline-none focus:border-primary"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-semibold text-text-muted block mb-1">
+                        Daily XP Ceiling
+                      </label>
+                      <input
+                        type="number"
+                        value={rule.maxDailyXP}
+                        onChange={(e) =>
+                          updateAntiGamingRule(sourceKey, {
+                            maxDailyXP: Math.max(50, parseInt(e.target.value) || 50),
+                          })
+                        }
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-card border border-border text-text font-mono text-xs focus:outline-none focus:border-primary"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="text-[10px] font-semibold text-text-muted block mb-1">
+                        Repeat Limit/Day
+                      </label>
+                      <input
+                        type="number"
+                        value={rule.repeatContentMaxPerDay}
+                        onChange={(e) =>
+                          updateAntiGamingRule(sourceKey, {
+                            repeatContentMaxPerDay: Math.max(1, parseInt(e.target.value) || 1),
+                          })
+                        }
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-card border border-border text-text font-mono text-xs focus:outline-none focus:border-primary"
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* XP Transactions Audit Trail */}
+          <div className="p-6 rounded-3xl bg-card border border-border shadow-xs space-y-4">
+            <div className="flex items-center justify-between border-b border-border pb-3">
+              <div className="flex items-center gap-2">
+                <Sparkles size={18} className="text-primary" />
+                <h3 className="text-base font-black text-text">Live Practice XP Ledger Audit</h3>
+              </div>
+              <span className="text-xs text-text-muted font-semibold">
+                {xpTransactions.length} Verified Educational Transactions
+              </span>
+            </div>
+
+            <div className="space-y-2">
+              {xpTransactions.slice(0, 8).map((tx) => (
+                <div
+                  key={tx.id}
+                  className="p-3 rounded-xl bg-surface border border-border flex items-center justify-between gap-3 text-xs"
+                >
+                  <div className="space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-text capitalize">
+                        {tx.eventType.replace(/_/g, ' ')}
+                      </span>
+                      <span className="px-1.5 py-0.5 rounded bg-card border border-border text-[9px] uppercase font-bold text-text-muted">
+                        {tx.sourceType}
+                      </span>
+                      <span className="text-emerald-500 font-semibold text-[10px] flex items-center gap-0.5">
+                        <CheckCircle2 size={11} /> Verified Anti-Gaming
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-text-muted block">
+                      {new Date(tx.createdAt).toLocaleString()} • Duration: {tx.metadata?.durationSeconds || 60}s
+                    </span>
+                  </div>
+
+                  <span className="font-mono font-bold text-indigo-500 text-sm shrink-0">
+                    +{tx.xpAmount} XP
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 5. AUDIT LOGS */}
       {activeTab === 'audit' && (
         <div className="p-6 rounded-3xl bg-card border border-border shadow-xs space-y-4">
@@ -731,41 +1356,43 @@ export const AdminDashboardView: React.FC = () => {
         </div>
       )}
 
-      {/* Preview Modal as Learner (Requirement 55) */}
-      {selectedPreviewContent && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-card border border-border w-full max-w-lg rounded-3xl p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-border pb-3">
-              <div>
-                <span className="text-[10px] font-bold text-primary uppercase">Learner Preview Mode</span>
-                <h3 className="text-base font-black text-text">{selectedPreviewContent.title}</h3>
-              </div>
-              <button
-                onClick={() => setSelectedPreviewContent(null)}
-                className="p-1.5 rounded-xl text-text-muted hover:text-text hover:bg-surface"
-              >
-                <X size={18} />
-              </button>
-            </div>
-            <div className="p-4 rounded-2xl bg-surface border border-border space-y-2 text-xs">
-              <span className="font-bold text-text">Content Summary:</span>
-              <p className="text-text-muted leading-relaxed">{selectedPreviewContent.summary}</p>
-              <div className="pt-2 flex items-center gap-2 text-[10px] text-text-muted">
-                <span>Level: <strong>{selectedPreviewContent.level}</strong></span>
-                <span>•</span>
-                <span>Status: <strong>{selectedPreviewContent.status}</strong></span>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => setSelectedPreviewContent(null)}
-              className="w-full py-2.5 rounded-xl bg-primary text-white text-xs font-bold"
-            >
-              Close Preview
-            </button>
-          </div>
-        </div>
-      )}
+      {/* 1. Production Content Authoring Studio Modal */}
+      <ContentAuthoringModal
+        isOpen={isAuthoringOpen}
+        onClose={() => {
+          setIsAuthoringOpen(false);
+          setEditingContentItem(null);
+        }}
+        editItem={editingContentItem}
+      />
+
+      {/* 2. Isolated Learner Preview Modal */}
+      <ContentPreviewModal
+        isOpen={isPreviewOpen}
+        onClose={() => {
+          setIsPreviewOpen(false);
+          setPreviewContentItem(null);
+        }}
+        contentItem={previewContentItem}
+      />
+
+      {/* 3. Sanitized Import / Export Modal */}
+      <ContentImportExportModal
+        isOpen={isImportExportOpen}
+        onClose={() => setIsImportExportOpen(false)}
+      />
+
+      {/* 4. Learner Issue & Pedagogical Feedback Inbox */}
+      <ContentIssueTrackerModal
+        isOpen={isIssueTrackerOpen}
+        onClose={() => setIsIssueTrackerOpen(false)}
+        onOpenContentEditor={(contentId) => {
+          const it = managedContent.find((c) => c.id === contentId);
+          if (it) {
+            handleOpenAuthoring(it);
+          }
+        }}
+      />
     </div>
   );
 };

@@ -11,7 +11,12 @@ export type ActivityType =
   | 'vocab'
   | 'idiom'
   | 'phrasal_verb'
-  | 'challenge';
+  | 'challenge'
+  | 'peer'
+  | 'group'
+  | 'listening'
+  | 'reading'
+  | 'writing';
 
 export type SkillType =
   | 'speaking'
@@ -19,6 +24,8 @@ export type SkillType =
   | 'vocabulary'
   | 'pronunciation'
   | 'listening'
+  | 'reading'
+  | 'writing'
   | 'fluency'
   | 'naturalness';
 

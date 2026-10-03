@@ -21,7 +21,8 @@ import {
   Award,
   Filter,
   Layers,
-  MapPin
+  MapPin,
+  Briefcase
 } from 'lucide-react';
 
 export const LearnDashboardView: React.FC = () => {
@@ -199,6 +200,35 @@ export const LearnDashboardView: React.FC = () => {
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Career English & Job Readiness Banner (Part 17) */}
+      <div className="rounded-3xl bg-gradient-to-r from-amber-500/10 via-card to-card border border-amber-500/20 p-6 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center shrink-0">
+            <Briefcase size={24} />
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-500/15 px-2 py-0.5 rounded-md">
+                Career Track
+              </span>
+              <h3 className="text-base font-black text-text">Job Readiness & Interview Mastery</h3>
+            </div>
+            <p className="text-xs text-text-muted mt-0.5 max-w-xl">
+              Elevate your English for the workplace: practice 15s to 2min self-introductions, refine resume bullets with metrics, explain projects to technical interviewers, and simulate full AI mock interviews.
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => navigate('/career')}
+          className="px-5 py-3 rounded-2xl bg-primary text-primary-foreground font-bold text-xs flex items-center gap-2 hover:opacity-90 transition-opacity self-start sm:self-auto shrink-0 shadow-xs shadow-primary/20"
+        >
+          <span>Open Career Hub</span>
+          <ArrowRight size={14} />
+        </button>
       </div>
 
       {/* Smart Revision Component */}

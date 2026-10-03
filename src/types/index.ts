@@ -71,6 +71,8 @@ export interface SkillProgress {
   fluency: number;
   listening: number;
   speaking: number;
+  reading?: number;
+  writing?: number;
   conversation: number;
   confidence: number;
 }

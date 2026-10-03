@@ -18,7 +18,10 @@ import {
   Mic,
   Shield,
   User,
-  HeartHandshake
+  HeartHandshake,
+  Briefcase,
+  Building2,
+  FlaskConical
 } from 'lucide-react';
 import { useNavigation } from '../../context/NavigationContext';
 
@@ -28,8 +31,13 @@ export const Sidebar: React.FC = () => {
   const mainItems = [
     { id: '/home', label: 'Home', icon: Home },
     { id: '/learn', label: 'Learn Curriculum', icon: BookOpen },
+    { id: '/career', label: 'Career English', icon: Briefcase },
+    { id: '/workplace', label: 'Workplace & Leadership', icon: Building2 },
+    { id: '/pro-lab', label: 'Professional Lab', icon: FlaskConical },
+    { id: '/communication', label: 'Communication Hub', icon: Layers },
     { id: '/talk', label: 'Talk & Jarvis', icon: MessageSquare },
     { id: '/practice', label: 'Practice Arena', icon: Zap },
+    { id: '/community', label: 'Community Practice', icon: HeartHandshake },
     { id: '/roleplay', label: 'Roleplay Scenarios', icon: Users2 },
     { id: '/test', label: 'Tests & Levels', icon: Award },
   ];
@@ -39,7 +47,8 @@ export const Sidebar: React.FC = () => {
     { id: '/vocabulary', label: 'Vocabulary Bank', icon: Sparkles },
     { id: '/idioms', label: 'Idioms & Metaphors', icon: Compass },
     { id: '/phrasal-verbs', label: 'Phrasal Verbs', icon: Layers },
-    { id: '/pronunciation', label: 'Pronunciation Lab', icon: Mic },
+    { id: '/talk/pronunciation-studio', label: 'Pronunciation Studio', icon: Mic },
+    { id: '/talk/spontaneous', label: 'Spontaneous Challenge', icon: Zap },
   ];
 
   const progressItems = [

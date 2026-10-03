@@ -3,6 +3,10 @@ import { PageHeader } from '../layout/PageHeader';
 import { useUser } from '../../context/UserContext';
 import { useHistory } from '../../context/HistoryContext';
 import { useNavigation } from '../../context/NavigationContext';
+import { useGamification } from '../../context/GamificationContext';
+import { PersonalBestsCard } from '../gamification/PersonalBestsCard';
+import { XPLedgerModal } from '../gamification/XPLedgerModal';
+import { CommunicationDashboardCard } from '../communication/CommunicationDashboardCard';
 import {
   Flame,
   Sparkles,
@@ -21,22 +25,57 @@ import {
   AlertTriangle,
   HelpCircle,
   Eye,
+  Sliders,
+  History,
 } from 'lucide-react';
 
 export const ProgressView: React.FC = () => {
   const { user, skillProgress } = useUser();
-  const { comparisonData, achievements, activities, insights, goals, activeGoalId, setActiveGoalId } = useHistory();
+  const { comparisonData, activities, insights, goals, activeGoalId, setActiveGoalId } = useHistory();
+  const {
+    userLevel,
+    streakData,
+    achievements,
+    openAchievementModal,
+    openSettingsModal,
+    gamificationSettings,
+  } = useGamification();
   const { navigate } = useNavigation();
 
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
   const [activeReviewTab, setActiveReviewTab] = useState<'weekly' | 'monthly'>('weekly');
   const [showAdminAnalytics, setShowAdminAnalytics] = useState<boolean>(false);
+  const [isXpLedgerOpen, setIsXpLedgerOpen] = useState<boolean>(false);
 
   const metrics = [
-    { label: 'Continuous Streak', val: `${user.streakDays} Days`, icon: Flame, color: 'text-amber-500 bg-amber-500/10' },
-    { label: 'Fluency XP', val: `${user.xp} XP`, icon: Sparkles, color: 'text-indigo-500 bg-indigo-500/10' },
-    { label: 'Spoken Today', val: `${user.minutesSpokenToday} / ${user.dailyGoalMinutes} min`, icon: Clock, color: 'text-emerald-500 bg-emerald-500/10' },
-    { label: 'Active CEFR Level', val: `${user.currentLevel} Elementary`, icon: Award, color: 'text-primary bg-primary/10' },
+    {
+      label: 'Continuous Streak',
+      val: `${streakData.currentStreak} Days`,
+      icon: Flame,
+      color: 'text-amber-500 bg-amber-500/10',
+      detail: streakData.freezesAvailable > 0 ? `${streakData.freezesAvailable} Freezes Active` : 'Daily habit',
+    },
+    {
+      label: 'Learner Level',
+      val: `Lvl ${userLevel.level}: ${userLevel.title}`,
+      icon: Sparkles,
+      color: 'text-indigo-500 bg-indigo-500/10',
+      detail: `${user.xp} Total XP (Consistency)`,
+    },
+    {
+      label: 'Spoken Today',
+      val: `${user.minutesSpokenToday} / ${user.dailyGoalMinutes} min`,
+      icon: Clock,
+      color: 'text-emerald-500 bg-emerald-500/10',
+      detail: 'Daily voice practice',
+    },
+    {
+      label: 'Evaluated CEFR',
+      val: `${user.currentLevel} Elementary`,
+      icon: Award,
+      color: 'text-primary bg-primary/10',
+      detail: 'Communication Proficiency',
+    },
   ];
 
   // Comprehensive 8-Skills Breakdown
@@ -323,6 +362,9 @@ export const ProgressView: React.FC = () => {
         </div>
       </div>
 
+      {/* Part 16: Complete Communication Skills Dashboard */}
+      <CommunicationDashboardCard />
+
       {/* Comprehensive 8-Skills Breakdown Cards */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
@@ -456,52 +498,85 @@ export const ProgressView: React.FC = () => {
         )}
       </div>
 
-      {/* Lightweight Learning Achievements (Requirement 25) */}
+      {/* Personal Speaking Records & Evidence (Part 15) */}
+      <PersonalBestsCard />
+
+      {/* Master Learning Achievements & Transparent Progression (Part 15) */}
       <div className="p-6 rounded-3xl bg-card border border-border shadow-xs space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 className="text-base font-black text-text">Milestones & Achievements</h3>
-            <p className="text-xs text-text-muted">Rewarding real educational habits, not vanity metrics</p>
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-black text-text">Milestones & Master Achievements</h3>
+              {gamificationSettings.showXP && (
+                <button
+                  type="button"
+                  onClick={() => setIsXpLedgerOpen(true)}
+                  className="px-2.5 py-0.5 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 font-bold text-[11px] hover:bg-indigo-500/20 transition-colors flex items-center gap-1"
+                >
+                  <History size={12} />
+                  <span>XP Ledger</span>
+                </button>
+              )}
+            </div>
+            <p className="text-xs text-text-muted">
+              Rewarding real educational habits, speaking confidence, and long-term retention. Click any item for requirements.
+            </p>
           </div>
-          <span className="text-xs font-bold text-primary">
-            {achievements.filter((a) => a.isUnlocked).length} / {achievements.length} Unlocked
-          </span>
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <span className="text-xs font-bold text-primary">
+              {achievements.filter((a) => a.isUnlocked).length} / {achievements.length} Unlocked
+            </span>
+            <button
+              type="button"
+              onClick={openSettingsModal}
+              className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-surface border border-border transition-colors"
+              title="Gamification preferences"
+            >
+              <Sliders size={14} />
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {achievements.map((ach) => (
             <div
               key={ach.id}
-              className={`p-4 rounded-2xl border transition-all space-y-2 ${
+              onClick={() => openAchievementModal(ach)}
+              className={`p-4 rounded-2xl border transition-all space-y-2 cursor-pointer hover:border-primary/50 hover:shadow-xs ${
                 ach.isUnlocked
                   ? 'bg-card border-primary/30 shadow-2xs'
-                  : 'bg-surface/50 border-border opacity-60'
+                  : 'bg-surface/50 border-border opacity-70'
               }`}
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-text">{ach.title}</span>
+                <span className="text-xs font-bold text-text truncate pr-2">{ach.title}</span>
                 {ach.isUnlocked ? (
-                  <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
+                  <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
                 ) : (
-                  <span className="text-[10px] text-text-muted font-mono font-bold">
+                  <span className="text-[10px] text-text-muted font-mono font-bold shrink-0">
                     {ach.progress}/{ach.maxProgress}
                   </span>
                 )}
               </div>
 
-              <p className="text-[11px] text-text-muted leading-relaxed">
+              <p className="text-[11px] text-text-muted leading-relaxed line-clamp-2">
                 {ach.description}
               </p>
 
-              {ach.isUnlocked && ach.unlockedAt && (
-                <span className="text-[10px] text-primary font-semibold block pt-1">
-                  Unlocked {ach.unlockedAt}
+              <div className="flex items-center justify-between pt-1 border-t border-border/40 text-[10px]">
+                <span className="capitalize font-semibold text-text-muted">
+                  {ach.category} • {ach.tier}
                 </span>
-              )}
+                {gamificationSettings.showXP && (
+                  <span className="font-bold text-indigo-500">+{ach.xpReward} XP</span>
+                )}
+              </div>
             </div>
           ))}
         </div>
       </div>
+
+      <XPLedgerModal isOpen={isXpLedgerOpen} onClose={() => setIsXpLedgerOpen(false)} />
     </div>
   );
 };

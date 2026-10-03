@@ -6,6 +6,9 @@ import { useUser } from '../../context/UserContext';
 import { CONVERSATION_TOPICS } from '../../data/talkTopics';
 import { AI_PERSONAS } from '../../data/personas';
 import { ConversationDifficulty } from '../../types/talk';
+import { ConversationMode, CorrectionStyle, NativeLanguageSupport } from '../../types/speakingIntelligence';
+import { ConversationModeSelectorModal } from './ConversationModeSelectorModal';
+import { NativeThinkingBridgeModal } from './NativeThinkingBridgeModal';
 import {
   Mic,
   MessageSquare,
@@ -27,20 +30,23 @@ import {
   CheckCircle2,
   Lock,
   Layers,
-  Award
+  Award,
+  Zap,
+  Volume2,
+  Image as ImageIcon,
+  Flame,
+  Presentation,
+  Code2,
 } from 'lucide-react';
 
 export const TalkHomeView: React.FC = () => {
   const { navigate } = useNavigation();
   const { user } = useUser();
 
-  // Start Conversation Modal state
-  const [isStartModalOpen, setIsStartModalOpen] = useState(false);
-  const [selectedTopicId, setSelectedTopicId] = useState<string>('topic-my-day');
-  const [customTopicText, setCustomTopicText] = useState<string>('');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<ConversationDifficulty>('normal');
-  const [selectedPersonaId, setSelectedPersonaId] = useState<string>('jarvis');
-  const [preferredMode, setPreferredMode] = useState<'voice' | 'text'>('voice');
+  // Mode Selector Modal state
+  const [isModeSelectorOpen, setIsModeSelectorOpen] = useState(false);
+  // Native Thinking Bridge Modal state
+  const [isBridgeModalOpen, setIsBridgeModalOpen] = useState(false);
 
   // Recording Privacy Consent Modal
   const [showConsentModal, setShowConsentModal] = useState(false);
@@ -50,6 +56,9 @@ export const TalkHomeView: React.FC = () => {
     personaId: string;
     difficulty: ConversationDifficulty;
     mode: 'voice' | 'text';
+    conversationMode?: ConversationMode;
+    correctionStyle?: CorrectionStyle;
+    nativeLanguage?: NativeLanguageSupport;
   } | null>(null);
 
   // Check consent status from localStorage
@@ -57,26 +66,40 @@ export const TalkHomeView: React.FC = () => {
     topicId: string,
     personaId: string,
     difficulty: ConversationDifficulty,
-    mode: 'voice' | 'text'
+    mode: 'voice' | 'text',
+    conversationMode?: ConversationMode,
+    correctionStyle?: CorrectionStyle,
+    nativeLanguage?: NativeLanguageSupport
   ) => {
     const hasConsented = localStorage.getItem('learntalk_recording_consent');
     if (mode === 'voice' && !hasConsented) {
-      setPendingLaunchParams({ topicId, personaId, difficulty, mode });
+      setPendingLaunchParams({ topicId, personaId, difficulty, mode, conversationMode, correctionStyle, nativeLanguage });
       setShowConsentModal(true);
       return;
     }
 
-    launchDirectly(topicId, personaId, difficulty, mode);
+    launchDirectly(topicId, personaId, difficulty, mode, conversationMode, correctionStyle, nativeLanguage);
   };
 
   const launchDirectly = (
     topicId: string,
     personaId: string,
     difficulty: ConversationDifficulty,
-    mode: 'voice' | 'text'
+    mode: 'voice' | 'text',
+    conversationMode?: ConversationMode,
+    correctionStyle?: CorrectionStyle,
+    nativeLanguage?: NativeLanguageSupport
   ) => {
     if (mode === 'voice') {
-      navigate('/talk/call', { topicId, personaId, difficulty, initialMode: 'voice' });
+      navigate('/talk/call', {
+        topicId,
+        personaId,
+        difficulty,
+        initialMode: 'voice',
+        conversationMode: conversationMode || 'guided',
+        correctionStyle: correctionStyle || 'balanced',
+        nativeLanguage: nativeLanguage || 'telugu',
+      });
     } else {
       navigate('/talk/jarvis', { topicId, personaId, difficulty });
     }
@@ -88,8 +111,8 @@ export const TalkHomeView: React.FC = () => {
     }
     setShowConsentModal(false);
     if (pendingLaunchParams) {
-      const { topicId, personaId, difficulty, mode } = pendingLaunchParams;
-      launchDirectly(topicId, personaId, difficulty, mode);
+      const { topicId, personaId, difficulty, mode, conversationMode, correctionStyle, nativeLanguage } = pendingLaunchParams;
+      launchDirectly(topicId, personaId, difficulty, mode, conversationMode, correctionStyle, nativeLanguage);
       setPendingLaunchParams(null);
     }
   };
@@ -103,18 +126,13 @@ export const TalkHomeView: React.FC = () => {
     checkConsentAndLaunch('topic-my-day', 'jarvis', 'normal', 'voice');
   };
 
-  const handleModalLaunch = () => {
-    setIsStartModalOpen(false);
-    checkConsentAndLaunch(selectedTopicId, selectedPersonaId, selectedDifficulty, preferredMode);
-  };
-
   return (
     <div className="flex flex-col gap-8 max-w-6xl mx-auto pb-16">
       {/* Header */}
       <PageHeader
         title="Talk with Jarvis"
         subtitle="Your AI English Conversation Partner — Practice speaking naturally with zero judgment"
-        badge="Live AI Speaking"
+        badge="Part 12 Speaking Intelligence"
       />
 
       {/* Hero Jarvis Banner with 24x7 Status & Instant Start */}
@@ -136,22 +154,22 @@ export const TalkHomeView: React.FC = () => {
                   Online 24×7
                 </span>
                 <span className="px-2.5 py-0.5 rounded-full bg-primary/10 text-primary font-bold text-xs border border-primary/20">
-                  Strict Context Lock
+                  Adaptive Intelligence
                 </span>
               </div>
-              <p className="text-xs sm:text-sm text-text-muted mt-2 max-w-2xl leading-relaxed">
+              <p className="text-xs sm:text-sm text-text-secondary mt-2 max-w-2xl leading-relaxed">
                 "Hello {user.name}! I'm Jarvis. I'm here to listen, reply naturally, gently point out better words, and help you think directly in English without hesitations."
               </p>
 
               {/* Speaking Quota & 24x7 limit indicator */}
-              <div className="mt-3 flex items-center gap-4 text-xs font-semibold text-text-muted">
+              <div className="mt-3 flex items-center gap-4 text-xs font-semibold text-text-secondary">
                 <div className="flex items-center gap-1.5 text-text">
                   <Clock size={14} className="text-primary" />
                   <span>Today's Speaking: <strong>{user.minutesSpokenToday} mins</strong> spoken</span>
                 </div>
                 <span className="text-border">|</span>
                 <span className="text-emerald-600 dark:text-emerald-400 font-bold">
-                  Unlimited Conversational Turns
+                  Evidence-Based Fluency Coaching
                 </span>
               </div>
             </div>
@@ -160,16 +178,16 @@ export const TalkHomeView: React.FC = () => {
           <div className="flex flex-col sm:flex-row lg:flex-col gap-3 shrink-0">
             <button
               type="button"
-              onClick={() => setIsStartModalOpen(true)}
-              className="px-7 py-3.5 bg-primary text-primary-foreground font-black text-sm rounded-2xl shadow-lg shadow-primary/30 hover:bg-primary-hover active:scale-98 transition-all flex items-center justify-center gap-2.5"
+              onClick={() => setIsModeSelectorOpen(true)}
+              className="px-7 py-3.5 bg-primary text-white font-black text-sm rounded-2xl shadow-lg shadow-primary/30 hover:bg-primary/90 active:scale-98 transition-all flex items-center justify-center gap-2.5"
             >
               <Mic size={18} className="animate-pulse" />
-              <span>🎙 Start Talking Now</span>
+              <span>🎙 Start Talking (Select Mode)</span>
             </button>
             <button
               type="button"
               onClick={() => navigate('/talk/jarvis')}
-              className="px-5 py-2.5 bg-surface border border-border text-text font-bold text-xs rounded-xl hover:bg-surface-hover active:scale-98 transition-all flex items-center justify-center gap-2"
+              className="px-5 py-2.5 bg-surface border border-border text-text font-bold text-xs rounded-xl hover:bg-surface/80 active:scale-98 transition-all flex items-center justify-center gap-2"
             >
               <MessageSquare size={14} />
               <span>Switch to Text Chat</span>
@@ -181,10 +199,10 @@ export const TalkHomeView: React.FC = () => {
       {/* Quick Action Navigation Bar */}
       <div>
         <div className="flex items-center justify-between mb-3 px-1">
-          <h3 className="text-xs font-black uppercase tracking-wider text-text-muted">
+          <h3 className="text-xs font-black uppercase tracking-wider text-text-secondary">
             Quick Actions
           </h3>
-          <span className="text-xs text-text-muted">Instant tools to support your speaking</span>
+          <span className="text-xs text-text-secondary">Instant tools to support your speaking</span>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
@@ -197,7 +215,7 @@ export const TalkHomeView: React.FC = () => {
               <MessageSquare size={18} />
             </div>
             <span className="text-xs font-bold text-text">Text Chat</span>
-            <span className="text-[10px] text-text-muted">Type & learn</span>
+            <span className="text-[10px] text-text-secondary">Type & learn</span>
           </button>
 
           <button
@@ -208,32 +226,32 @@ export const TalkHomeView: React.FC = () => {
             <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
               <Mic size={18} />
             </div>
-            <span className="text-xs font-bold text-text">Voice Chat</span>
-            <span className="text-[10px] text-text-muted">Phone-call style</span>
+            <span className="text-xs font-bold text-text">Voice Call</span>
+            <span className="text-[10px] text-text-secondary">Phone-call style</span>
           </button>
 
           <button
             type="button"
-            onClick={() => navigate('/talk/speaking-help')}
-            className="p-4 rounded-2xl bg-card border border-border hover:border-primary/40 hover:shadow-xs transition-all flex flex-col items-center text-center gap-2"
-          >
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-              <HelpCircle size={18} />
-            </div>
-            <span className="text-xs font-bold text-text">Speaking Help</span>
-            <span className="text-[10px] text-text-muted">Starters & stems</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => navigate('/talk/translate')}
-            className="p-4 rounded-2xl bg-card border border-border hover:border-primary/40 hover:shadow-xs transition-all flex flex-col items-center text-center gap-2"
+            onClick={() => setIsBridgeModalOpen(true)}
+            className="p-4 rounded-2xl bg-card border border-border hover:border-secondary/40 hover:shadow-xs transition-all flex flex-col items-center text-center gap-2"
           >
             <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 flex items-center justify-center">
               <Languages size={18} />
             </div>
-            <span className="text-xs font-bold text-text">Translate</span>
-            <span className="text-[10px] text-text-muted">Telugu & Hindi</span>
+            <span className="text-xs font-bold text-text">Thinking Bridge</span>
+            <span className="text-[10px] text-text-secondary">Native to English</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => navigate('/talk/pronunciation-studio')}
+            className="p-4 rounded-2xl bg-card border border-border hover:border-primary/40 hover:shadow-xs transition-all flex flex-col items-center text-center gap-2"
+          >
+            <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+              <Volume2 size={18} />
+            </div>
+            <span className="text-xs font-bold text-text">Pronunciation</span>
+            <span className="text-[10px] text-text-secondary">Stress & Pairs</span>
           </button>
 
           <button
@@ -245,7 +263,7 @@ export const TalkHomeView: React.FC = () => {
               <Bookmark size={18} />
             </div>
             <span className="text-xs font-bold text-text">Saved Phrases</span>
-            <span className="text-[10px] text-text-muted">Your phrasebook</span>
+            <span className="text-[10px] text-text-secondary">Your phrasebook</span>
           </button>
 
           <button
@@ -257,18 +275,199 @@ export const TalkHomeView: React.FC = () => {
               <History size={18} />
             </div>
             <span className="text-xs font-bold text-text">History</span>
-            <span className="text-[10px] text-text-muted">Past talks</span>
+            <span className="text-[10px] text-text-secondary">Past talks</span>
           </button>
+        </div>
+      </div>
+
+      {/* Part 12 Advanced Speaking Intelligence & Fluency Studio */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between px-1">
+          <div>
+            <div className="flex items-center gap-2">
+              <Sparkles size={18} className="text-primary" />
+              <h3 className="text-base font-black text-text">
+                Speaking Intelligence & Natural Fluency Arenas
+              </h3>
+            </div>
+            <p className="text-xs text-text-secondary">
+              Master pronunciation, bypass translation delays, and practice workplace communication
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* 1. Pronunciation & Stress Studio */}
+          <div
+            onClick={() => navigate('/talk/pronunciation-studio')}
+            className="cursor-pointer group p-5 rounded-3xl bg-card border border-border hover:border-primary/50 hover:shadow-md transition-all flex flex-col justify-between"
+          >
+            <div className="flex items-start gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center text-2xl shrink-0 group-hover:scale-105 transition-transform">
+                🔊
+              </div>
+              <div>
+                <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-[10px] font-black uppercase">
+                  Studio
+                </span>
+                <h4 className="text-base font-black text-text group-hover:text-primary transition-colors mt-1">
+                  Pronunciation & Stress Lab
+                </h4>
+                <p className="text-xs text-text-secondary mt-1 leading-relaxed">
+                  Syllable stress breakdowns, minimal pairs (ship vs sheep), sentence meaning shifts, and shadowing.
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs font-bold text-primary">
+              <span>Open Studio</span>
+              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+
+          {/* 2. Spontaneous 45s Challenge */}
+          <div
+            onClick={() => navigate('/talk/spontaneous')}
+            className="cursor-pointer group p-5 rounded-3xl bg-card border border-border hover:border-primary/50 hover:shadow-md transition-all flex flex-col justify-between"
+          >
+            <div className="flex items-start gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center text-2xl shrink-0 group-hover:scale-105 transition-transform">
+                ⚡
+              </div>
+              <div>
+                <span className="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 text-[10px] font-black uppercase">
+                  Fluency Reflex
+                </span>
+                <h4 className="text-base font-black text-text group-hover:text-primary transition-colors mt-1">
+                  Spontaneous 45s Speaking
+                </h4>
+                <p className="text-xs text-text-secondary mt-1 leading-relaxed">
+                  15-second prep timer with OREO & STAR structure guides to respond under realistic speaking pressure.
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs font-bold text-primary">
+              <span>Take Challenge</span>
+              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+
+          {/* 3. Rapid Fire Response Drill */}
+          <div
+            onClick={() => navigate('/talk/rapid')}
+            className="cursor-pointer group p-5 rounded-3xl bg-card border border-border hover:border-primary/50 hover:shadow-md transition-all flex flex-col justify-between"
+          >
+            <div className="flex items-start gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center text-2xl shrink-0 group-hover:scale-105 transition-transform">
+                🎯
+              </div>
+              <div>
+                <span className="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-black uppercase">
+                  Quick Formation
+                </span>
+                <h4 className="text-base font-black text-text group-hover:text-primary transition-colors mt-1">
+                  Rapid Fire Response Drill
+                </h4>
+                <p className="text-xs text-text-secondary mt-1 leading-relaxed">
+                  Fast 10-second prompt drills to eliminate translation hesitation and build instant conversational reflexes.
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs font-bold text-primary">
+              <span>Start Rapid Drill</span>
+              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+
+          {/* 4. Professional & Technical Speaking */}
+          <div
+            onClick={() => navigate('/talk/professional')}
+            className="cursor-pointer group p-5 rounded-3xl bg-card border border-border hover:border-primary/50 hover:shadow-md transition-all flex flex-col justify-between"
+          >
+            <div className="flex items-start gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center text-2xl shrink-0 group-hover:scale-105 transition-transform">
+                💼
+              </div>
+              <div>
+                <span className="px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-black uppercase">
+                  Workplace
+                </span>
+                <h4 className="text-base font-black text-text group-hover:text-primary transition-colors mt-1">
+                  Professional & Technical
+                </h4>
+                <p className="text-xs text-text-secondary mt-1 leading-relaxed">
+                  Daily standups, polite disagreement, presentations, system architecture trade-offs, and negotiations.
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs font-bold text-primary">
+              <span>Practice Workplace</span>
+              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+
+          {/* 5. Picture Description & Visual Speaking */}
+          <div
+            onClick={() => navigate('/talk/picture')}
+            className="cursor-pointer group p-5 rounded-3xl bg-card border border-border hover:border-primary/50 hover:shadow-md transition-all flex flex-col justify-between"
+          >
+            <div className="flex items-start gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center text-2xl shrink-0 group-hover:scale-105 transition-transform">
+                🖼️
+              </div>
+              <div>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase">
+                  Visual Fluency
+                </span>
+                <h4 className="text-base font-black text-text group-hover:text-primary transition-colors mt-1">
+                  Picture Speaking & Story
+                </h4>
+                <p className="text-xs text-text-secondary mt-1 leading-relaxed">
+                  Describe objects, actions, infer feelings, and narrate what happens next in lively visual scenes.
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs font-bold text-primary">
+              <span>View Visual Scenes</span>
+              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
+
+          {/* 6. Native-to-English Thinking Bridge */}
+          <div
+            onClick={() => setIsBridgeModalOpen(true)}
+            className="cursor-pointer group p-5 rounded-3xl bg-card border border-border hover:border-primary/50 hover:shadow-md transition-all flex flex-col justify-between"
+          >
+            <div className="flex items-start gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-secondary/10 text-secondary flex items-center justify-center text-2xl shrink-0 group-hover:scale-105 transition-transform">
+                🌐
+              </div>
+              <div>
+                <span className="px-2 py-0.5 rounded-full bg-secondary/10 text-secondary text-[10px] font-black uppercase">
+                  Scaffolding
+                </span>
+                <h4 className="text-base font-black text-text group-hover:text-primary transition-colors mt-1">
+                  Thinking Bridge & Contrasts
+                </h4>
+                <p className="text-xs text-text-secondary mt-1 leading-relaxed">
+                  Transform Telugu/Hindi/Tamil thoughts into Natural & Professional English + "Why This Word?" rules.
+                </p>
+              </div>
+            </div>
+            <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs font-bold text-primary">
+              <span>Open Thinking Bridge</span>
+              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Practice Modes Section */}
       <div>
         <div className="flex items-center justify-between mb-3 px-1">
-          <h3 className="text-xs font-black uppercase tracking-wider text-text-muted">
-            Practice Modes
+          <h3 className="text-xs font-black uppercase tracking-wider text-text-secondary">
+            Classic Conversation Topics
           </h3>
-          <span className="text-xs text-text-muted">Choose how you want to train today</span>
+          <span className="text-xs text-text-secondary">Choose how you want to train today</span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -285,7 +484,7 @@ export const TalkHomeView: React.FC = () => {
                 <h4 className="text-base font-black text-text group-hover:text-primary transition-colors">
                   Random Conversation
                 </h4>
-                <p className="text-xs text-text-muted mt-1 leading-relaxed">
+                <p className="text-xs text-text-secondary mt-1 leading-relaxed">
                   Surprise spontaneous topic to train your brain to think and reply fast without overthinking.
                 </p>
               </div>
@@ -314,7 +513,7 @@ export const TalkHomeView: React.FC = () => {
                     Daily
                   </span>
                 </div>
-                <p className="text-xs text-text-muted mt-1 leading-relaxed">
+                <p className="text-xs text-text-secondary mt-1 leading-relaxed">
                   "My Day & Routine" — Discuss morning habits, office tasks, and evening unwind routines.
                 </p>
               </div>
@@ -327,7 +526,7 @@ export const TalkHomeView: React.FC = () => {
 
           {/* 3. Choose a Topic */}
           <div
-            onClick={() => setIsStartModalOpen(true)}
+            onClick={() => setIsModeSelectorOpen(true)}
             className="cursor-pointer group p-5 rounded-3xl bg-card border border-border hover:border-primary/40 hover:shadow-sm transition-all flex flex-col justify-between"
           >
             <div className="flex items-start gap-3.5">
@@ -336,87 +535,15 @@ export const TalkHomeView: React.FC = () => {
               </div>
               <div>
                 <h4 className="text-base font-black text-text group-hover:text-primary transition-colors">
-                  Choose a Topic
+                  Customize Mode & Goal
                 </h4>
-                <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                  Select from 10 structured topics (Cricket, Travel, Tech, Food) or type your custom idea.
+                <p className="text-xs text-text-secondary mt-1 leading-relaxed">
+                  Configure Free, Guided, Interview, or Professional mode with target milestones.
                 </p>
               </div>
             </div>
             <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs font-bold text-primary">
-              <span>Browse Catalog</span>
-              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-            </div>
-          </div>
-
-          {/* 4. Interview Practice */}
-          <div
-            onClick={() => checkConsentAndLaunch('topic-interview', 'vikram', 'normal', 'voice')}
-            className="cursor-pointer group p-5 rounded-3xl bg-card border border-border hover:border-primary/40 hover:shadow-sm transition-all flex flex-col justify-between"
-          >
-            <div className="flex items-start gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center text-xl shrink-0 group-hover:scale-105 transition-transform">
-                💼
-              </div>
-              <div>
-                <h4 className="text-base font-black text-text group-hover:text-primary transition-colors">
-                  Job Interview Simulator
-                </h4>
-                <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                  Practice self-introductions, technical questions, project storytelling, and salary talks.
-                </p>
-              </div>
-            </div>
-            <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs font-bold text-primary">
-              <span>Start Interview</span>
-              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-            </div>
-          </div>
-
-          {/* 5. Office & Workplace Conversation */}
-          <div
-            onClick={() => checkConsentAndLaunch('topic-office', 'jarvis', 'normal', 'voice')}
-            className="cursor-pointer group p-5 rounded-3xl bg-card border border-border hover:border-primary/40 hover:shadow-sm transition-all flex flex-col justify-between"
-          >
-            <div className="flex items-start gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center text-xl shrink-0 group-hover:scale-105 transition-transform">
-                🏢
-              </div>
-              <div>
-                <h4 className="text-base font-black text-text group-hover:text-primary transition-colors">
-                  Office & Standup Sync
-                </h4>
-                <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                  Practice agile updates, deadline negotiations, requesting help, and 1:1 manager syncs.
-                </p>
-              </div>
-            </div>
-            <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs font-bold text-primary">
-              <span>Enter Office Sync</span>
-              <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-            </div>
-          </div>
-
-          {/* 6. Roleplay Directory */}
-          <div
-            onClick={() => navigate('/roleplay')}
-            className="cursor-pointer group p-5 rounded-3xl bg-card border border-border hover:border-primary/40 hover:shadow-sm transition-all flex flex-col justify-between"
-          >
-            <div className="flex items-start gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 flex items-center justify-center text-xl shrink-0 group-hover:scale-105 transition-transform">
-                🎭
-              </div>
-              <div>
-                <h4 className="text-base font-black text-text group-hover:text-primary transition-colors">
-                  Roleplay Directory
-                </h4>
-                <p className="text-xs text-text-muted mt-1 leading-relaxed">
-                  Hotel check-ins, ordering food, complaining to customer care, buying tickets, and doctor visits.
-                </p>
-              </div>
-            </div>
-            <div className="mt-4 pt-3 border-t border-border flex items-center justify-between text-xs font-bold text-primary">
-              <span>Explore Scenarios</span>
+              <span>Customize Mode</span>
               <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
@@ -433,7 +560,7 @@ export const TalkHomeView: React.FC = () => {
                 Speaking World: Interactive Realistic Environments
               </h2>
             </div>
-            <p className="text-xs sm:text-sm text-text-muted mt-0.5">
+            <p className="text-xs sm:text-sm text-text-secondary mt-0.5">
               Choose a place to practice contextual conversations — Hotel, Tea Stall, Supermarket, Airport & more
             </p>
           </div>
@@ -442,209 +569,34 @@ export const TalkHomeView: React.FC = () => {
         <SpeakingWorldMap />
       </div>
 
-      {/* Start Conversation Setup Modal */}
-      {isStartModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fadeIn">
-          <div className="w-full max-w-2xl rounded-3xl bg-card border border-border p-6 sm:p-7 shadow-2xl max-h-[90vh] overflow-y-auto space-y-6">
-            <div className="flex items-center justify-between pb-3 border-b border-border">
-              <div className="flex items-center gap-2.5">
-                <span className="text-2xl">🎙</span>
-                <div>
-                  <h3 className="text-lg font-black text-text">Start a Conversation with Jarvis</h3>
-                  <p className="text-xs text-text-muted">Strict context locking will keep Jarvis focused on your choice</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsStartModalOpen(false)}
-                className="text-text-muted hover:text-text font-bold text-sm px-2 py-1"
-              >
-                ✕
-              </button>
-            </div>
+      {/* Mode Selector Modal */}
+      <ConversationModeSelectorModal
+        isOpen={isModeSelectorOpen}
+        onClose={() => setIsModeSelectorOpen(false)}
+        onLaunch={(cfg) => {
+          setIsModeSelectorOpen(false);
+          checkConsentAndLaunch(
+            cfg.topicId,
+            cfg.personaId,
+            cfg.difficulty,
+            cfg.preferredInput,
+            cfg.mode,
+            cfg.correctionStyle,
+            cfg.nativeLanguage
+          );
+        }}
+      />
 
-            {/* Step 1: Select Topic */}
-            <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-text-muted mb-2">
-                1. Select Topic
-              </label>
+      {/* Native Thinking Bridge Modal */}
+      <NativeThinkingBridgeModal
+        isOpen={isBridgeModalOpen}
+        onClose={() => setIsBridgeModalOpen(false)}
+        defaultLang="telugu"
+      />
 
-              {/* Custom Topic Input */}
-              <div className="mb-3">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={customTopicText}
-                    onChange={(e) => {
-                      setCustomTopicText(e.target.value);
-                      if (e.target.value) {
-                        setSelectedTopicId('custom');
-                      }
-                    }}
-                    placeholder="I want to talk about (e.g. My favorite sci-fi movies)..."
-                    className="flex-1 px-4 py-2.5 rounded-xl bg-surface border border-border text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/20"
-                  />
-                  {customTopicText && (
-                    <span className="text-[11px] font-bold text-primary px-2 py-1 rounded bg-primary/10">
-                      Custom Selected
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Topic Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-48 overflow-y-auto p-1 border border-border/40 rounded-2xl bg-surface/50">
-                {CONVERSATION_TOPICS.map((top) => {
-                  const isSelected = selectedTopicId === top.id && !customTopicText;
-                  return (
-                    <button
-                      key={top.id}
-                      type="button"
-                      onClick={() => {
-                        setSelectedTopicId(top.id);
-                        setCustomTopicText('');
-                      }}
-                      className={`p-3 rounded-xl border text-left flex items-start gap-2.5 transition-all ${
-                        isSelected
-                          ? 'bg-primary text-primary-foreground border-primary shadow-xs'
-                          : 'bg-card border-border hover:bg-surface text-text'
-                      }`}
-                    >
-                      <span className="text-lg">{top.icon}</span>
-                      <div className="truncate">
-                        <p className="text-xs font-bold truncate">{top.title}</p>
-                        <p className={`text-[10px] truncate ${isSelected ? 'text-primary-foreground/80' : 'text-text-muted'}`}>
-                          {top.category}
-                        </p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Step 2: Choose Difficulty */}
-            <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-text-muted mb-2">
-                2. Conversation Difficulty
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                {(['easy', 'normal', 'challenging', 'advanced'] as ConversationDifficulty[]).map((diff) => (
-                  <button
-                    key={diff}
-                    type="button"
-                    onClick={() => setSelectedDifficulty(diff)}
-                    className={`py-2 px-3 rounded-xl text-xs font-bold capitalize transition-all ${
-                      selectedDifficulty === diff
-                        ? 'bg-primary text-primary-foreground shadow-xs'
-                        : 'bg-surface border border-border text-text-muted hover:text-text'
-                    }`}
-                  >
-                    {diff}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Step 3: Choose Persona */}
-            <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-text-muted mb-2">
-                3. Conversational Partner
-              </label>
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                {AI_PERSONAS.slice(0, 5).map((p) => {
-                  const isSelected = selectedPersonaId === p.id;
-                  return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => setSelectedPersonaId(p.id)}
-                      className={`p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all ${
-                        isSelected
-                          ? 'bg-primary/10 border-primary text-text'
-                          : 'bg-surface border-border text-text-muted hover:text-text'
-                      }`}
-                    >
-                      <span className="text-xl">{p.avatar}</span>
-                      <div className="truncate">
-                        <p className="text-xs font-bold text-text truncate">{p.name}</p>
-                        <p className="text-[10px] text-text-muted truncate">{p.tone} • {p.role}</p>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Step 4: Mode Selection */}
-            <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-text-muted mb-2">
-                4. Experience Mode
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setPreferredMode('voice')}
-                  className={`p-3 rounded-2xl border text-left flex items-center gap-3 transition-all ${
-                    preferredMode === 'voice'
-                      ? 'bg-primary/10 border-primary text-text'
-                      : 'bg-surface border-border text-text-muted'
-                  }`}
-                >
-                  <div className="w-8 h-8 rounded-xl bg-primary text-primary-foreground flex items-center justify-center shrink-0">
-                    <Mic size={16} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-black text-text">Phone Call (Voice)</p>
-                    <p className="text-[10px] text-text-muted">Real-time voice with barge-in</p>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setPreferredMode('text')}
-                  className={`p-3 rounded-2xl border text-left flex items-center gap-3 transition-all ${
-                    preferredMode === 'text'
-                      ? 'bg-primary/10 border-primary text-text'
-                      : 'bg-surface border-border text-text-muted'
-                  }`}
-                >
-                  <div className="w-8 h-8 rounded-xl bg-surface border border-border text-text flex items-center justify-center shrink-0">
-                    <MessageSquare size={16} />
-                  </div>
-                  <div>
-                    <p className="text-xs font-black text-text">Text Chat</p>
-                    <p className="text-[10px] text-text-muted">Type and read corrections</p>
-                  </div>
-                </button>
-              </div>
-            </div>
-
-            {/* Launch Buttons */}
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
-              <button
-                type="button"
-                onClick={() => setIsStartModalOpen(false)}
-                className="px-5 py-2.5 rounded-xl text-xs font-bold text-text-muted hover:bg-surface"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleModalLaunch}
-                className="px-6 py-2.5 rounded-xl text-xs font-bold bg-primary text-primary-foreground hover:bg-primary-hover shadow-md flex items-center gap-2"
-              >
-                <span>Launch Conversation</span>
-                <ArrowRight size={14} />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Recording Consent Prompt Modal (Requirement 40) */}
+      {/* Recording Consent Prompt Modal */}
       {showConsentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-fadeIn">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/70 backdrop-blur-sm animate-fade-in">
           <div className="w-full max-w-md rounded-3xl bg-card border border-border p-6 shadow-2xl space-y-4">
             <div className="w-12 h-12 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mx-auto text-2xl">
               🎙
@@ -652,12 +604,12 @@ export const TalkHomeView: React.FC = () => {
 
             <div className="text-center">
               <h3 className="text-lg font-black text-text">Conversation Recording & Privacy</h3>
-              <p className="text-xs text-text-muted mt-2 leading-relaxed">
-                LearnTalk can save your speaking turns locally so you can re-listen to your voice, compare your pronunciation, track your pace, and review corrections in your Recordings Hub.
+              <p className="text-xs text-text-secondary mt-2 leading-relaxed">
+                LearnTalk saves your speaking turns locally in your browser so you can re-listen to your voice, compare your pronunciation, track your pace, and review corrections in your Recordings Hub.
               </p>
             </div>
 
-            <div className="p-3.5 rounded-2xl bg-surface border border-border text-xs text-text-muted space-y-2">
+            <div className="p-3.5 rounded-2xl bg-surface border border-border text-xs text-text-secondary space-y-2">
               <div className="flex items-center gap-2 text-text font-semibold">
                 <ShieldCheck size={16} className="text-emerald-500 shrink-0" />
                 <span>Your privacy is completely protected</span>
@@ -681,14 +633,14 @@ export const TalkHomeView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleConsentChoice(false)}
-                className="px-4 py-2.5 rounded-xl bg-surface border border-border text-xs font-bold text-text-muted hover:text-text hover:bg-surface-hover"
+                className="px-4 py-2.5 rounded-xl bg-surface border border-border text-xs font-bold text-text-secondary hover:text-text hover:bg-surface/80"
               >
                 Continue Without Recording
               </button>
               <button
                 type="button"
                 onClick={() => handleConsentChoice(true)}
-                className="px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-xs font-bold hover:bg-primary-hover shadow-sm"
+                className="px-4 py-2.5 rounded-xl bg-primary text-white text-xs font-bold hover:bg-primary/90 shadow-xs"
               >
                 Allow Recording
               </button>

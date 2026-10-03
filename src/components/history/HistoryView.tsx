@@ -24,6 +24,7 @@ import {
   Sparkles,
   ChevronRight,
   Shield,
+  Users2,
 } from 'lucide-react';
 
 export const HistoryView: React.FC = () => {
@@ -73,12 +74,19 @@ export const HistoryView: React.FC = () => {
       icon: Play,
       count: activities.filter((a) => a.hasRecording).length,
     },
+    {
+      id: 'community',
+      label: 'Peer & Community',
+      icon: Users2,
+      count: activities.filter((a) => a.activityType === 'peer' || a.activityType === 'group').length,
+    },
   ];
 
   // Filtering
   const filteredActivities = activities.filter((item) => {
     // Category match
     if (activeCategory === 'speaking' && item.activityType !== 'speaking' && item.activityType !== 'talk') return false;
+    if (activeCategory === 'community' && item.activityType !== 'peer' && item.activityType !== 'group') return false;
     if (activeCategory === 'roleplay' && item.activityType !== 'roleplay') return false;
     if (activeCategory === 'test' && item.activityType !== 'test') return false;
     if (activeCategory === 'lesson' && item.activityType !== 'lesson') return false;

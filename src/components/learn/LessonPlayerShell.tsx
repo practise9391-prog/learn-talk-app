@@ -15,7 +15,9 @@ import {
   HelpCircle,
   Lightbulb,
   Award,
+  Flag,
 } from 'lucide-react';
+import { LearnerReportIssueModal } from '../common/LearnerReportIssueModal';
 
 interface LessonPlayerShellProps {
   lesson: Lesson;
@@ -29,6 +31,7 @@ export const LessonPlayerShell: React.FC<LessonPlayerShellProps> = ({ lesson }) 
   const [voiceState, setVoiceState] = useState<VoiceButtonState>('idle');
   const [hasRecordedTurn, setHasRecordedTurn] = useState<boolean>(false);
   const [isCompleted, setIsCompleted] = useState<boolean>(lesson.completed);
+  const [isIssueModalOpen, setIsIssueModalOpen] = useState<boolean>(false);
 
   const steps = [
     { id: 'learn', title: '1. Learn', description: 'Core Concept & Why it Matters' },
@@ -87,6 +90,15 @@ export const LessonPlayerShell: React.FC<LessonPlayerShellProps> = ({ lesson }) 
         </div>
 
         <div className="flex items-center gap-2 self-start sm:self-auto">
+          <button
+            type="button"
+            onClick={() => setIsIssueModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold text-text-muted hover:text-rose-500 bg-surface border border-border transition-all"
+            title="Report an issue or suggest improvement with this lesson"
+          >
+            <Flag size={12} />
+            <span>Report</span>
+          </button>
           <span className="text-xs font-bold text-text-muted bg-surface px-3 py-1 rounded-full border border-border">
             Step {currentStepIndex + 1} of {steps.length}
           </span>
@@ -323,6 +335,13 @@ export const LessonPlayerShell: React.FC<LessonPlayerShellProps> = ({ lesson }) 
           <ArrowRight size={14} />
         </button>
       </div>
+      <LearnerReportIssueModal
+        isOpen={isIssueModalOpen}
+        onClose={() => setIsIssueModalOpen(false)}
+        contentId={lesson.id}
+        contentTitle={lesson.title}
+        contentType="curriculum_lesson"
+      />
     </div>
   );
 };

@@ -4,6 +4,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { useUser } from '../../context/UserContext';
 import { useNavigation } from '../../context/NavigationContext';
 import { useNotifications } from '../../context/NotificationContext';
+import { useGamification } from '../../context/GamificationContext';
 import { NotificationCenterModal } from '../notifications/NotificationCenterModal';
 import { GlobalSearchModal } from '../common/GlobalSearchModal';
 import { ThemePalette } from '../../types';
@@ -13,6 +14,7 @@ export const TopBar: React.FC = () => {
   const { user } = useUser();
   const { navigate } = useNavigation();
   const { unreadCount } = useNotifications();
+  const { streakData, gamificationSettings, openSettingsModal } = useGamification();
 
   const [showPaletteMenu, setShowPaletteMenu] = useState(false);
   const [showNotificationCenter, setShowNotificationCenter] = useState(false);
@@ -100,22 +102,49 @@ export const TopBar: React.FC = () => {
           </button>
 
           {/* Daily Streak */}
-          <div
-            className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 text-xs font-bold"
-            title={`${user.streakDays} Day Continuous Speaking Streak`}
-          >
-            <Flame size={15} className="fill-amber-500 text-amber-500" />
-            <span>{user.streakDays}d</span>
-          </div>
+          {gamificationSettings.showStreak && !gamificationSettings.focusMode && (
+            <button
+              type="button"
+              onClick={openSettingsModal}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border text-xs font-bold transition-all hover:scale-102 ${
+                streakData.isProtectedToday
+                  ? 'bg-amber-500/15 border-amber-500/30 text-amber-600 dark:text-amber-400'
+                  : 'bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400'
+              }`}
+              title={`${streakData.currentStreak} Day Continuous Speaking Streak (${streakData.freezesAvailable} Freezes Available). Click to manage.`}
+            >
+              <Flame size={15} className="fill-amber-500 text-amber-500" />
+              <span>{streakData.currentStreak}d</span>
+              {streakData.freezesAvailable > 0 && (
+                <span className="w-1.5 h-1.5 rounded-full bg-cyan-500" title="Streak Freeze Active" />
+              )}
+            </button>
+          )}
 
           {/* XP Token */}
-          <div
-            className="hidden xs:flex items-center gap-1 px-2.5 py-1 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-bold"
-            title={`${user.xp} Practice XP Earned`}
-          >
-            <Sparkles size={14} className="fill-indigo-500 text-indigo-500" />
-            <span>{user.xp} XP</span>
-          </div>
+          {gamificationSettings.showXP && !gamificationSettings.focusMode && (
+            <button
+              type="button"
+              onClick={() => navigate('/progress')}
+              className="hidden xs:flex items-center gap-1 px-2.5 py-1 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-600 dark:text-indigo-400 text-xs font-bold hover:bg-indigo-500/20 transition-colors"
+              title={`${user.xp} Practice XP Earned. Click to view progress.`}
+            >
+              <Sparkles size={14} className="fill-indigo-500 text-indigo-500" />
+              <span>{user.xp} XP</span>
+            </button>
+          )}
+
+          {/* Focus Mode indicator pill */}
+          {gamificationSettings.focusMode && (
+            <button
+              type="button"
+              onClick={openSettingsModal}
+              className="flex items-center gap-1 px-2 py-1 rounded-xl bg-surface border border-border text-[11px] font-bold text-text-muted hover:text-text transition-colors"
+              title="Focus Mode is ON. Click to configure."
+            >
+              <span>Calm Focus</span>
+            </button>
+          )}
 
           {/* Speaking Minutes Today */}
           <div

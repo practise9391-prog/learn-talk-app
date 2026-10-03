@@ -40,8 +40,33 @@ import { AdminDashboardView } from './components/admin/AdminDashboardView';
 import { AdaptiveLearningProvider } from './context/AdaptiveLearningContext';
 import { OnboardingModal } from './components/onboarding/OnboardingModal';
 import { MASTER_CURRICULUM } from './data/curriculumData';
+import { PronunciationStudioView } from './components/talk/PronunciationStudioView';
+import { SpontaneousSpeakingView } from './components/talk/SpontaneousSpeakingView';
+import { RapidResponseArenaView } from './components/talk/RapidResponseArenaView';
+import { PictureSpeakingView } from './components/talk/PictureSpeakingView';
+import { ProfessionalSpeakingView } from './components/talk/ProfessionalSpeakingView';
+import { ConversationMode, CorrectionStyle, NativeLanguageSupport } from './types/speakingIntelligence';
 import { ConfidenceMode } from './types';
 import { ConversationDifficulty } from './types/talk';
+import { CommunityProvider } from './context/CommunityContext';
+import { CommunityHomeView } from './components/community/CommunityHomeView';
+import { HumanSpeakingRoomView } from './components/community/HumanSpeakingRoomView';
+import { GroupSpeakingRoomView } from './components/community/GroupSpeakingRoomView';
+import { GamificationProvider } from './context/GamificationContext';
+import { CelebrationToast } from './components/gamification/CelebrationToast';
+import { LevelUpModal } from './components/gamification/LevelUpModal';
+import { AchievementDetailModal } from './components/gamification/AchievementDetailModal';
+import { GamificationSettingsModal } from './components/gamification/GamificationSettingsModal';
+import { CommunicationSkillsProvider } from './context/CommunicationSkillsContext';
+import { CommunicationHubView } from './components/communication/CommunicationHubView';
+import { CareerProvider } from './context/CareerContext';
+import { CareerIntelligenceProvider } from './context/CareerIntelligenceContext';
+import { WorkplaceMasteryProvider } from './context/WorkplaceMasteryContext';
+import { CareerHubView } from './components/career/CareerHubView';
+import { WorkplaceCommunicationProvider } from './context/WorkplaceCommunicationContext';
+import { WorkplaceHubView } from './components/workplace/WorkplaceHubView';
+import { ProLabProvider } from './context/ProLabContext';
+import { ProLabView } from './components/proLab/ProLabView';
 
 const RouterOutlet: React.FC = () => {
   const { currentRoute, navigate } = useNavigation();
@@ -103,8 +128,26 @@ const RouterOutlet: React.FC = () => {
           customStarter={params.customStarter}
           grammarContext={params.grammarContext}
           vocabContext={params.vocabContext}
+          conversationMode={params.conversationMode as ConversationMode}
+          correctionStyle={params.correctionStyle as CorrectionStyle}
+          nativeLanguage={params.nativeLanguage as NativeLanguageSupport}
         />
       );
+
+    case '/talk/pronunciation-studio':
+      return <PronunciationStudioView />;
+
+    case '/talk/spontaneous':
+      return <SpontaneousSpeakingView />;
+
+    case '/talk/rapid':
+      return <RapidResponseArenaView />;
+
+    case '/talk/picture':
+      return <PictureSpeakingView />;
+
+    case '/talk/professional':
+      return <ProfessionalSpeakingView />;
 
     case '/talk/saved-phrases':
       return <MySavedPhrasesView />;
@@ -171,6 +214,27 @@ const RouterOutlet: React.FC = () => {
     case '/practice':
       return <PracticeHubView />;
 
+    case '/community':
+      return <CommunityHomeView />;
+
+    case '/community/room':
+      return <HumanSpeakingRoomView />;
+
+    case '/community/group':
+      return <GroupSpeakingRoomView />;
+
+    case '/communication':
+      return <CommunicationHubView />;
+
+    case '/career':
+      return <CareerHubView />;
+
+    case '/workplace':
+      return <WorkplaceHubView />;
+
+    case '/pro-lab':
+      return <ProLabView />;
+
     case '/profile':
       return <UserProfileView />;
 
@@ -196,12 +260,32 @@ export const App: React.FC = () => {
                 <AdaptiveLearningProvider>
                   <NotificationProvider>
                     <AdminProvider>
-                      <NavigationProvider>
-                        <AppShell>
-                          <RouterOutlet />
-                          <OnboardingModal />
-                        </AppShell>
-                      </NavigationProvider>
+                      <CommunityProvider>
+                        <GamificationProvider>
+                          <CareerProvider>
+                            <CareerIntelligenceProvider>
+                              <WorkplaceMasteryProvider>
+                                <WorkplaceCommunicationProvider>
+                                  <CommunicationSkillsProvider>
+                                    <ProLabProvider>
+                                      <NavigationProvider>
+                                        <AppShell>
+                                          <RouterOutlet />
+                                          <OnboardingModal />
+                                          <CelebrationToast />
+                                          <LevelUpModal />
+                                          <AchievementDetailModal />
+                                          <GamificationSettingsModal />
+                                        </AppShell>
+                                      </NavigationProvider>
+                                    </ProLabProvider>
+                                  </CommunicationSkillsProvider>
+                                </WorkplaceCommunicationProvider>
+                              </WorkplaceMasteryProvider>
+                            </CareerIntelligenceProvider>
+                          </CareerProvider>
+                        </GamificationProvider>
+                      </CommunityProvider>
                     </AdminProvider>
                   </NotificationProvider>
                 </AdaptiveLearningProvider>
