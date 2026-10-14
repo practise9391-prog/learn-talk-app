@@ -2,6 +2,7 @@ import React from 'react';
 import { WelcomeSection } from './WelcomeSection';
 import { PersonalizedIntelligenceSection } from './PersonalizedIntelligenceSection';
 import { DailyGoalCard } from '../gamification/DailyGoalCard';
+import { MasterJourneyCard } from './MasterJourneyCard';
 import { DailyPracticeSection } from '../curriculum/DailyPracticeSection';
 import { DailyLearningCard } from './DailyLearningCard';
 import { SkillProgressOverview } from './SkillProgressOverview';
@@ -20,6 +21,7 @@ export const HomeView: React.FC = () => {
       <WelcomeSection />
       <DailyGoalCard />
       <PersonalizedIntelligenceSection />
+      <MasterJourneyCard />
       <DailyPracticeSection />
       <DailyLearningCard />
       <CommunicationDashboardCard />

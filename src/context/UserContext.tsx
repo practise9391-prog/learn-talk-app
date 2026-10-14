@@ -20,7 +20,15 @@ interface UserContextType {
   resolveMistake: (mistakeId: string) => void;
   deleteRecording: (recordingId: string) => void;
   saveNewRecording: (rec: Omit<Recording, 'id' | 'timestamp'>) => void;
-  finishOnboarding: (data: { level: User['currentLevel']; goals: string[]; nativeLanguages: string[]; dailyGoalMinutes: number }) => void;
+  finishOnboarding: (data: {
+    level: User['currentLevel'];
+    goals: string[];
+    nativeLanguages: string[];
+    dailyGoalMinutes: number;
+    ageGroup?: User['ageGroup'];
+    preferredExplanationLanguage?: User['preferredExplanationLanguage'];
+    comfortSpeakingAloud?: User['comfortSpeakingAloud'];
+  }) => void;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -141,6 +149,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
     goals: string[];
     nativeLanguages: string[];
     dailyGoalMinutes: number;
+    ageGroup?: User['ageGroup'];
+    preferredExplanationLanguage?: User['preferredExplanationLanguage'];
+    comfortSpeakingAloud?: User['comfortSpeakingAloud'];
   }) => {
     setUser((prev) => ({
       ...prev,
@@ -148,6 +159,9 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
       goals: data.goals,
       nativeLanguages: data.nativeLanguages,
       dailyGoalMinutes: data.dailyGoalMinutes,
+      ...(data.ageGroup && { ageGroup: data.ageGroup }),
+      ...(data.preferredExplanationLanguage && { preferredExplanationLanguage: data.preferredExplanationLanguage }),
+      ...(data.comfortSpeakingAloud && { comfortSpeakingAloud: data.comfortSpeakingAloud }),
     }));
     localStorage.setItem('learntalk_onboarding_completed', 'true');
     setIsOnboardingOpen(false);

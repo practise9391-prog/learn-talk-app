@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { SPEAKING_WORLD_LOCATIONS } from '../../data/locations';
+import { FULL_MAP_LOCATIONS } from '../../data/coreJourneyData';
 import { LocationScenario } from '../../types';
 import { LocationPin } from './LocationPin';
 import { LocationDetailModal } from './LocationDetailModal';
@@ -13,16 +14,53 @@ export const SpeakingWorldMap: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [viewMode, setViewMode] = useState<'map' | 'cards'>('map');
 
+  // Unified location list with deduplication
+  const allLocations: LocationScenario[] = useMemo(() => {
+    const list: LocationScenario[] = [...SPEAKING_WORLD_LOCATIONS];
+    const existingIds = new Set(list.map((l) => l.id));
+
+    FULL_MAP_LOCATIONS.forEach((fl) => {
+      if (!existingIds.has(fl.id)) {
+        list.push({
+          id: fl.id,
+          name: fl.name,
+          category: fl.category as any,
+          icon: fl.icon,
+          tagline: fl.tagline,
+          description: fl.description,
+          environmentDescription: fl.environmentDescription,
+          defaultPersonaId: fl.defaultPersonaId,
+          greetingPhrase: fl.greetingPhrase,
+          coordinates: fl.coordinates,
+          unlocked: fl.unlocked,
+          samplePhrases: fl.scenarios.flatMap((s) => s.samplePhrases),
+          conversationMilestones: fl.scenarios.map((s) => s.title),
+          scenarios: fl.scenarios,
+        });
+      }
+    });
+    return list;
+  }, []);
+
   const categories = [
-    { id: 'all', label: 'All Environments', count: SPEAKING_WORLD_LOCATIONS.length, icon: '🌎' },
-    { id: 'daily_life', label: 'Daily Life', count: 6, icon: '☕' },
-    { id: 'work_study', label: 'Work & Study', count: 5, icon: '🏢' },
-    { id: 'travel_transit', label: 'Travel & Transit', count: 5, icon: '✈️' },
-    { id: 'social_community', label: 'Social & Community', count: 4, icon: '🎬' },
+    { id: 'all', label: 'All Environments', count: allLocations.length, icon: '🌎' },
+    { id: 'education', label: 'Education & Campus', count: allLocations.filter((l) => l.category === 'education' || l.category === 'work_study').length, icon: '🏫' },
+    { id: 'daily_life', label: 'Daily Life', count: allLocations.filter((l) => l.category === 'daily_life').length, icon: '☕' },
+    { id: 'travel', label: 'Travel & Transit', count: allLocations.filter((l) => l.category === 'travel' || l.category === 'travel_transit').length, icon: '✈️' },
+    { id: 'professional', label: 'Workplace & Career', count: allLocations.filter((l) => l.category === 'professional' || l.category === 'work_study').length, icon: '💼' },
+    { id: 'civic_community', label: 'Civic & Community', count: allLocations.filter((l) => l.category === 'civic_community' || l.category === 'social_community').length, icon: '🏥' },
   ];
 
-  const filteredLocations = SPEAKING_WORLD_LOCATIONS.filter((loc) => {
-    const matchesCategory = activeCategory === 'all' || loc.category === activeCategory;
+  const filteredLocations = allLocations.filter((loc) => {
+    const matchesCategory =
+      activeCategory === 'all' ||
+      loc.category === activeCategory ||
+      (activeCategory === 'daily_life' && loc.category === 'daily_life') ||
+      (activeCategory === 'travel' && (loc.category === 'travel' || loc.category === 'travel_transit')) ||
+      (activeCategory === 'professional' && (loc.category === 'professional' || loc.category === 'work_study')) ||
+      (activeCategory === 'civic_community' && (loc.category === 'civic_community' || loc.category === 'social_community')) ||
+      (activeCategory === 'education' && (loc.category === 'education' || loc.category === 'work_study'));
+
     const matchesSearch =
       loc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       loc.tagline.toLowerCase().includes(searchQuery.toLowerCase()) ||

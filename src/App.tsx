@@ -67,6 +67,9 @@ import { WorkplaceCommunicationProvider } from './context/WorkplaceCommunication
 import { WorkplaceHubView } from './components/workplace/WorkplaceHubView';
 import { ProLabProvider } from './context/ProLabContext';
 import { ProLabView } from './components/proLab/ProLabView';
+import { CoreJourneyProvider } from './context/CoreJourneyContext';
+import { CoreJourneyHubView } from './components/learn/CoreJourneyHubView';
+import { SpeakingWorldMap } from './components/map/SpeakingWorldMap';
 
 const RouterOutlet: React.FC = () => {
   const { currentRoute, navigate } = useNavigation();
@@ -238,6 +241,16 @@ const RouterOutlet: React.FC = () => {
     case '/profile':
       return <UserProfileView />;
 
+    case '/journey':
+    case '/sentence-lab':
+    case '/think-in-english':
+    case '/conversation-recovery':
+    case '/speaking-journal':
+      return <CoreJourneyHubView />;
+
+    case '/map':
+      return <SpeakingWorldMap />;
+
     case '/admin':
       return <AdminDashboardView />;
 
@@ -268,16 +281,18 @@ export const App: React.FC = () => {
                                 <WorkplaceCommunicationProvider>
                                   <CommunicationSkillsProvider>
                                     <ProLabProvider>
-                                      <NavigationProvider>
-                                        <AppShell>
-                                          <RouterOutlet />
-                                          <OnboardingModal />
-                                          <CelebrationToast />
-                                          <LevelUpModal />
-                                          <AchievementDetailModal />
-                                          <GamificationSettingsModal />
-                                        </AppShell>
-                                      </NavigationProvider>
+                                      <CoreJourneyProvider>
+                                        <NavigationProvider>
+                                          <AppShell>
+                                            <RouterOutlet />
+                                            <OnboardingModal />
+                                            <CelebrationToast />
+                                            <LevelUpModal />
+                                            <AchievementDetailModal />
+                                            <GamificationSettingsModal />
+                                          </AppShell>
+                                        </NavigationProvider>
+                                      </CoreJourneyProvider>
                                     </ProLabProvider>
                                   </CommunicationSkillsProvider>
                                 </WorkplaceCommunicationProvider>

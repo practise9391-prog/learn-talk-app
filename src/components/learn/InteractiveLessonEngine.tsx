@@ -114,7 +114,7 @@ export const InteractiveLessonEngine: React.FC<InteractiveLessonEngineProps> = (
       setVoiceState('processing');
       setTimeout(() => {
         setVoiceState('idle');
-        setTranscriptText(lesson.speakingPrompt.exampleAnswer);
+        setTranscriptText(lesson.speakingPrompt.exampleAnswer || lesson.speakingPrompt.modelAnswer || '');
         setHasSpokenTurn(true);
         setElapsedSpeakingSeconds((prev) => prev + 25);
         addSpokenMinutes(1);
@@ -468,7 +468,7 @@ export const InteractiveLessonEngine: React.FC<InteractiveLessonEngineProps> = (
                 Suggested sentence framework:
               </span>
               <div className="flex flex-wrap gap-1.5">
-                {lesson.speakingPrompt.suggestedStarters.map((starter, i) => (
+                {(lesson.speakingPrompt.suggestedStarters || []).map((starter, i) => (
                   <span
                     key={i}
                     className="px-2.5 py-1 rounded-lg bg-card border border-border text-xs font-semibold text-text"

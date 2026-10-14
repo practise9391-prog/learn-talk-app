@@ -47,6 +47,9 @@ export interface User {
   dailyGoalMinutes: number;
   nativeLanguages: string[];
   goals: string[];
+  ageGroup?: 'children' | 'student_teen' | 'college' | 'professional' | 'adult_beginner' | 'older_adult';
+  preferredExplanationLanguage?: 'english' | 'telugu' | 'hindi';
+  comfortSpeakingAloud?: 'confident' | 'shy' | 'quiet_environment';
   settings: UserSettings;
 }
 
@@ -62,6 +65,8 @@ export interface UserSettings {
   activePersonaId: string;
   autoListenSlow: boolean;
   soundEffects: boolean;
+  textSizePreference?: 'normal' | 'large' | 'extra_large';
+  highContrastMode?: boolean;
 }
 
 export interface SkillProgress {
@@ -129,7 +134,7 @@ export interface Lesson {
 export interface LocationScenario {
   id: string;
   name: string;
-  category: 'daily_life' | 'work_study' | 'travel_transit' | 'social_community';
+  category: 'daily_life' | 'work_study' | 'travel_transit' | 'social_community' | 'education' | 'travel' | 'professional' | 'civic_community';
   icon: string;
   tagline: string;
   description: string;
@@ -139,7 +144,16 @@ export interface LocationScenario {
   coordinates: { x: number; y: number }; // Relative coordinates on the speaking world map (0-100%)
   unlocked: boolean;
   samplePhrases: string[];
-  conversationMilestones: string[];
+  conversationMilestones?: string[];
+  scenarios?: Array<{
+    id: string;
+    title: string;
+    difficulty: 'beginner' | 'intermediate' | 'advanced';
+    estimatedMinutes: number;
+    starterPrompt: string;
+    samplePhrases: string[];
+    completed: boolean;
+  }>;
 }
 
 export interface AICharacter {

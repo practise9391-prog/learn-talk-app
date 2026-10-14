@@ -30,7 +30,9 @@ export const Sidebar: React.FC = () => {
 
   const mainItems = [
     { id: '/home', label: 'Home', icon: Home },
+    { id: '/journey', label: 'Master Journey (P22+)', icon: Compass },
     { id: '/learn', label: 'Learn Curriculum', icon: BookOpen },
+    { id: '/map', label: 'Speaking World Map', icon: Compass },
     { id: '/career', label: 'Career English', icon: Briefcase },
     { id: '/workplace', label: 'Workplace & Leadership', icon: Building2 },
     { id: '/pro-lab', label: 'Professional Lab', icon: FlaskConical },
@@ -55,6 +57,7 @@ export const Sidebar: React.FC = () => {
     { id: '/history', label: 'Practice History', icon: History },
     { id: '/mistakes', label: 'Common Mistakes', icon: AlertTriangle },
     { id: '/progress', label: 'Skills & Analytics', icon: TrendingUp },
+    { id: '/speaking-journal', label: 'Speaking Journal', icon: Sparkles },
     { id: '/recordings', label: 'Voice Recordings', icon: FileAudio },
     { id: '/talk/saved-phrases', label: 'Saved Phrases', icon: BookmarkCheck },
   ];

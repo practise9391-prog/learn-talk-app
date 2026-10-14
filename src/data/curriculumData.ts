@@ -1,4 +1,5 @@
 import { CurriculumLevel, SmartRevisionItem } from '../types/curriculum';
+import { ZERO_LEVEL_FOUNDATIONS_UNIT } from './coreJourneyData';
 
 export const SMART_REVISION_ITEMS: SmartRevisionItem[] = [
   {
@@ -53,6 +54,7 @@ export const MASTER_CURRICULUM: CurriculumLevel[] = [
     competencyOutcome: 'Can understand and use familiar everyday expressions and basic phrases aimed at the satisfaction of concrete needs.',
     status: 'current',
     units: [
+      ZERO_LEVEL_FOUNDATIONS_UNIT,
       // UNIT 1: GREETINGS
       {
         id: 'b1-u1',

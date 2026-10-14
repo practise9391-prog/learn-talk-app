@@ -63,12 +63,22 @@ export interface GrammarFocus {
 export interface ExerciseItem {
   id: string;
   type: ExerciseType;
-  prompt: string;
+  prompt?: string;
   options?: string[];
-  correctAnswer: string;
+  correctAnswer?: string;
   wordsForRearrange?: string[];
-  explanation: string;
+  explanation?: string;
   hint?: string;
+  instruction?: string;
+  targetSentence?: string;
+  phoneticGuide?: string;
+  teluguTranslation?: string;
+  hindiTranslation?: string;
+  wordsToArrange?: string[];
+  correctOrder?: string[];
+  sentenceWithGap?: string;
+  missingWord?: string;
+  question?: string;
 }
 
 export interface DialogueTurn {
@@ -105,12 +115,24 @@ export interface CurriculumLesson {
     highlightWord?: string;
   }[];
   speakingPrompt: {
-    question: string;
-    context: string;
-    exampleAnswer: string;
-    suggestedStarters: string[];
+    id?: string;
+    question?: string;
+    context?: string;
+    exampleAnswer?: string;
+    suggestedStarters?: string[];
+    promptText?: string;
+    modelAnswer?: string;
+    targetKeywords?: string[];
+    hints?: string[];
   };
   exercises: ExerciseItem[];
+  quickQuiz?: Array<{
+    id: string;
+    question: string;
+    options: string[];
+    correctIndex: number;
+    explanation: string;
+  }>;
   conversationScenario: {
     scenarioTitle: string;
     context: string;
