@@ -1,0 +1,15 @@
+{
+  "expo": {
+    "name": "learntalk",
+    "slug": "learntalk",
+    "version": "1.0.0",
+    "extra": {
+      "eas": {
+        "projectId": "c08e8a37-27cc-4fea-854c-1d852bd8bd5f"
+      }
+    },
+    "android": {
+      "package": "com.pavan_9391.learntalk"
+    }
+  }
+}
